@@ -1,12 +1,12 @@
 {
-  "name": "Playerun — Games Hub",
+  "name": "Playerun — Games & Retro",
   "short_name": "Playerun",
-  "description": "Biblioteca de jogos arcade, HTML5 e retro no navegador.",
+  "description": "Biblioteca de jogos arcade e retro com leitor integrado.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#090b12",
-  "theme_color": "#090b12",
+  "background_color": "#080a10",
+  "theme_color": "#080a10",
   "icons": [
     {
       "src": "./icon.svg",
