@@ -110,8 +110,9 @@ function card(g){return '<article class="game" data-game="'+escapeHtml(g.id)+'">
 function render(){const q=$("search").value.trim().toLowerCase();let list=[...imported];if(activeFilter!=="Todos"&&activeFilter!=="Minha biblioteca")list=list.filter(g=>g.platform===activeFilter);if(q)list=list.filter(g=>(g.title+" "+g.platform+" "+(g.description||"")).toLowerCase().includes(q));$("games").innerHTML=list.map(card).join("");$("empty").hidden=!!list.length;$("gameCount").textContent=String(imported.length).padStart(2,"0");$("localCount").textContent=String(imported.length).padStart(2,"0")}
 function setFilter(f){activeFilter=f;document.querySelectorAll("[data-filter]").forEach(b=>b.classList.toggle("active",b.dataset.filter===f));render()}
 async function importFiles(files){for(const file of Array.from(files||[])){if(file.name.toLowerCase().endsWith(".zip")){if(!window.JSZip){alert("O leitor de ZIP não carregou. Verifica a internet e tenta novamente.");continue}try{const zip=await JSZip.loadAsync(file);const entries=Object.values(zip.files).filter(x=>!x.dir&&/\.(bin|gba|gb|gbc|nes|sfc|smc|md|gen|nds|iso|cue|chd|cso|pbp|sms|z64|n64|v64)$/i.test(x.name));for(const entry of entries){const path=entry.name.toLowerCase();const match=[["tank-battle","Tank Battle"],["battle-4tris","Battle 4Tris"],["snake","Snake Arena"],["space-shooter","Space Shooter"],["breakout","Breakout"],["pong","Pong"]].find(x=>path.includes(x[0]));const title=match?match[1]:entry.name.split("/").pop().replace(/\.[^.]+$/,"").replace(/[_-]+/g," ");const ext=entry.name.split(".").pop().toLowerCase();const platform=ext==="pbp"&&/psp/i.test(entry.name)?"PSP":(["md","gen"].includes(ext)||ext==="bin"&&/genesis|mega|sega/i.test(entry.name)?"Mega Drive":platformFor({name:entry.name}));const blob=await entry.async("blob");await dbPut({id:"zip-"+entry.name+"-"+blob.size,title,platform,core:coreFor(platform),description:"Homebrew importado do pack Sega",file:blob,added:Date.now()})}}catch(err){console.warn(err);alert("Não foi possível extrair este ZIP. Tenta descarregar novamente o pack.")}continue}const platform=platformFor(file);if(platform==="Outro")continue;const id="local-"+file.name+"-"+file.size;await dbPut({id,title:file.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," "),platform,core:coreFor(platform),description:"Importado da tua biblioteca local",file:file,added:Date.now()})}imported=await dbAll();render();$("localCount").textContent=String(imported.length).padStart(2,"0")}
+function stopEmulator(){try{if(typeof window.EJS_terminate==="function")window.EJS_terminate()}catch(e){console.warn("EmulatorJS shutdown",e)}}
 function launch(game){
- currentGame=game;
+ stopEmulator();currentGame=game;
  if(currentRomUrl&&currentRomUrl.startsWith("blob:"))URL.revokeObjectURL(currentRomUrl);
  currentRomUrl=null;
  $("playingTitle").textContent=game.title;$("asideTitle").textContent=game.title;
@@ -128,7 +129,7 @@ function launch(game){
   window.EJS_player="#game";window.EJS_gameUrl=currentRomUrl;window.EJS_biosUrl=biosUrl||"";
   window.EJS_core=core;window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";
   window.EJS_gameName=game.title;window.EJS_language="pt-BR";window.EJS_startOnLoaded=true;
-  window.EJS_color="#d5ff45";window.EJS_threads=core==="psp";window.EJS_gameID=1;window.EJS_netplay=false;
+  window.EJS_color="#d5ff45";window.EJS_threads=core==="psp";window.EJS_gameID=Math.abs(Array.from(String(game.id||game.title)).reduce((n,c)=>(n*31+c.charCodeAt(0))|0,7))||1;window.EJS_netplay=false;
   const schemes=["nes","gb","gba","snes","n64","nds","segaMD","segaCD","sega32x","segaMS","segaGG","segaSaturn","arcade","mame"];if(schemes.includes(core))window.EJS_controlScheme=core;else delete window.EJS_controlScheme;
   // Deixa o EmulatorJS aplicar o esquema nativo do core; "default" não é um esquema válido.
   const oldLoader=document.getElementById("playerun-emulator-loader");if(oldLoader)oldLoader.remove();const loader=document.createElement("script");loader.id="playerun-emulator-loader";loader.src="https://cdn.emulatorjs.org/stable/data/loader.js";
@@ -140,7 +141,7 @@ function launch(game){
   console.warn(err);
  }
 }
-function closePlayer(){if(currentRomUrl&&currentRomUrl.startsWith("blob:"))URL.revokeObjectURL(currentRomUrl);currentRomUrl=null;currentGame=null;$("stage").innerHTML="";$("player").classList.remove("open");$("player").setAttribute("aria-hidden","true");document.body.style.overflow=""}
+function closePlayer(){stopEmulator();const oldLoader=document.getElementById("playerun-emulator-loader");if(oldLoader)oldLoader.remove();if(currentRomUrl&&currentRomUrl.startsWith("blob:"))URL.revokeObjectURL(currentRomUrl);currentRomUrl=null;currentGame=null;$("stage").innerHTML="";$("player").classList.remove("open");$("player").setAttribute("aria-hidden","true");document.body.style.overflow=""}
 async function onCard(id){let game=CATALOG.find(g=>g.id===id)||imported.find(g=>g.id===id);if(!game)return;launch(game)}
 $("games").addEventListener("click",e=>{const c=e.target.closest("[data-game]");if(c)onCard(c.dataset.game)});
 $("filters").addEventListener("click",e=>{const b=e.target.closest("[data-filter]");if(b)setFilter(b.dataset.filter)});
