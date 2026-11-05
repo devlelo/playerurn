@@ -177,6 +177,8 @@
       clean.platform = String(clean.platform).trim();
       clean.mode = clean.mode || "download";
       if (!["download","html","info"].includes(clean.mode)) throw new Error("mode deve ser download, html ou info.");
+      if (clean.mode !== "info" && !clean.url) throw new Error("Jogos para download ou HTML precisam de url.");
+      clean.url = clean.url || clean.source || "#";
       clean.ext = clean.ext || String(clean.url).split("?")[0].split(".").pop().toLowerCase();
       return clean;
     };
