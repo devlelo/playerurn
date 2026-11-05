@@ -1,28 +1,22 @@
 # Playerun
 
-Playerun is a browser-first game hub with a Netflix-inspired catalogue, installable PWA shell, local favorites/history and browser-based retro emulation.
+Playerun is a retro game library and browser emulator PWA. The interface is an original Playerun design; games run in an isolated internal player using EmulatorJS.
 
-## Included
-- Responsive catalogue with search and category filters
-- Community catalogue sourced from [sausi-7/games](https://github.com/sausi-7/games) (142 browser games at time of integration)
-- Built-in Snake, Pong and Memory games
-- Favorites and recent games stored locally in the browser
-- Additional game libraries linked from the hub:
-  - [GameDoh Showcase](https://gamedoh.jskidz.au) — MIT HTML5/Canvas game collection
-  - [Web Games](https://mashukui.github.io/web-games/) — MIT collection of 48 single-file HTML5 games
-  - [Arcade Portal](https://github.com/greenmoach/arcade-portal) — 110 mini-games, browse upstream project
-- EmulatorJS integration for user-supplied ROMs
-- PWA manifest and service worker for the app shell
+## Current playable catalogue
+- Apotris — Game Boy Advance homebrew, GPL-3.0. ROM and cover are served from the community-maintained GBA Homebrew Hub.
+- Attack on Voxelburg — Game Boy Advance homebrew, GPL-3.0-or-later. ROM and cover are served from the GBA Homebrew Hub.
+- Battle 4Tris — Sega Mega Drive homebrew, MIT. ROM is offered by the original project's GitHub release; if browser CORS blocks automatic loading, download it from the source and import it.
 
-## Run and deploy
-Static site; no backend or build step is required. Serve this directory over HTTPS or localhost. Vercel can deploy the repository as a static project.
+## Supported emulator systems
+NES, SNES, Game Boy / Color, Game Boy Advance, Nintendo 64, Nintendo DS, Sega Mega Drive / Genesis, Master System, Saturn, PlayStation 1, PSP and Arcade (core support and performance vary).
 
-## Licensing and content notes
-- The original Playerun interface and original mini-game code are MIT licensed (see LICENSE).
-- EmulatorJS is GPL-3.0 and is loaded from its official CDN; it is not relicensed under MIT.
-- External libraries and games are served by their respective maintainers and remain under their own licenses. This hub links to or embeds upstream games; it does not claim ownership of them.
-- ROMs and BIOS files are not included. Use only game files you are legally entitled to use.
-- The service worker caches the Playerun shell only; external game content and emulator cores require internet access.
+## Personal ROM library
+Users can import ROM files from their device. Files are stored in the browser's IndexedDB on that device. The app does not upload ROMs to a server. For multi-file disc images, BIOS files, or systems with special requirements, consult the EmulatorJS documentation.
 
-## License
-The original Playerun interface and original mini-game code are provided under the MIT License. Third-party projects retain their own licenses.
+PSP uses the PPSSPP core and requires SharedArrayBuffer / cross-origin isolation. Vercel headers are configured for COOP and COEP. Actual PSP compatibility and performance vary by browser and device.
+
+## PWA and offline
+The service worker caches the Playerun application shell. It does not pre-cache third-party emulator cores or remote ROMs. Imported ROMs remain in local IndexedDB; emulator cores are fetched from the EmulatorJS CDN when needed.
+
+## Third-party components and content
+See THIRD_PARTY_NOTICES.md. The original Playerun interface is MIT licensed. Third-party games and emulators retain their own licenses.
