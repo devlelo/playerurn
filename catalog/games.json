@@ -1,7 +1,7 @@
 {
   "version": 1,
   "updated": "2026-11-05",
-  "notice": "Catálogo curado de homebrew, demos, jogos open source e páginas oficiais. Cada item mantém a fonte e a licença própria.",
+  "notice": "Catálogo curado de homebrew, demos, jogos open source e entradas informativas de jogos comerciais. Cada item mantém a fonte e a licença própria. Jogos comerciais sem autorização exigem ficheiro próprio do utilizador.",
   "games": [
     {
       "id": "apotris",
@@ -268,6 +268,30 @@
       "license": "MIT · código original Playerun",
       "type": "JOGO HTML",
       "mode": "html"
+    },
+    {
+      "id": "gta-liberty-city-stories-psp",
+      "title": "Grand Theft Auto: Liberty City Stories",
+      "platform": "PSP",
+      "ext": "iso",
+      "desc": "Aventura de mundo aberto da Rockstar para PSP, protagonizada por Toni Cipriani. Entrada informativa: importa a tua própria cópia para jogar.",
+      "genre": "Ação / Mundo aberto",
+      "license": "Comercial e proprietário · sem download incluído",
+      "source": "https://www.rockstargames.com/games/Libertycitystories",
+      "type": "JOGO COMERCIAL · PSP",
+      "mode": "info"
+    },
+    {
+      "id": "gta-vice-city-stories-psp",
+      "title": "Grand Theft Auto: Vice City Stories",
+      "platform": "PSP",
+      "ext": "iso",
+      "desc": "Aventura de mundo aberto da Rockstar ambientada em Vice City em 1984. Entrada informativa: importa a tua própria cópia para jogar.",
+      "genre": "Ação / Mundo aberto",
+      "license": "Comercial e proprietário · sem download incluído",
+      "source": "https://www.rockstargames.com/games/vicecitystories",
+      "type": "JOGO COMERCIAL · PSP",
+      "mode": "info"
     }
   ]
 }
