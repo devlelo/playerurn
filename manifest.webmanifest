@@ -1,7 +1,7 @@
 {
-  "name": "Playerun — Retro Games",
+  "name": "Playerun — Jogos de várias gerações",
   "short_name": "Playerun",
-  "description": "Biblioteca retro e emuladores no browser.",
+  "description": "Catálogo multi-plataforma de jogos homebrew, demos, jogos open source e biblioteca pessoal.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
