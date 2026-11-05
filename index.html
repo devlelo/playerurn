@@ -90,14 +90,15 @@ async function scanFolder(){
  if(!gameDir){$("folderStatus").textContent="Escolhe primeiro a pasta principal de jogos.";return}
  if(!await folderPermission(false)){$("folderStatus").textContent="Permissão de leitura não concedida.";return}
  const files=await readFolder(gameDir),seen=new Set();
+ const folderPlatform={"PlayStation Portable":"PSP","PlayStation 1":"PS1","Nintendo NES":"NES","Super Nintendo":"SNES","Game Boy":"GB","Game Boy Advance":"GBA","Nintendo 64":"N64","Nintendo DS":"NDS","Sega Mega Drive":"Mega Drive","Sega Master System":"MASTER SYSTEM","Sega Saturn":"SATURN","Arcade":"ARCADE"};
  for(const item of files){
-  const p=platformFor(item.file);if(p==="Outro")continue;
+  const root=item.path.split("/")[0],p=folderPlatform[root]||platformFor(item.file);if(p==="Outro")continue;
   const rid="folder-"+item.path+"-"+item.file.size;seen.add(rid);
   await dbPut({id:rid,title:item.file.name.replace(/\\.[^.]+$/,""),platform:p,core:coreFor(p),description:"Pasta: "+item.path,file:item.file,added:Date.now(),folder:folderForPlatform(p)});
  }
  const allRows=await dbAll();for(const row of allRows){if(String(row.id).startsWith("folder-")&&!seen.has(row.id))await dbDelete(row.id)}
  imported=await dbAll();render();
- $("folderStatus").textContent=files.length+" ficheiro(s) analisados. A organização recomendada é: "+Object.values({"PSP":"PlayStation Portable","PS1":"PlayStation 1","GBA":"Game Boy Advance","NES":"Nintendo NES","SNES":"Super Nintendo","Mega Drive":"Sega Mega Drive"}).join(" · ")+".";
+ $("folderStatus").textContent=files.length+" ficheiro(s) analisados nas pastas separadas por emulador.";
 }
 async function chooseFolder(){if(!window.showDirectoryPicker){alert("Este navegador não suporta ligação direta de pastas. Usa Importar pasta como alternativa.");return}try{gameDir=await window.showDirectoryPicker({id:"playerun-games",mode:"readwrite"});await saveFolder(gameDir);await scanFolder()}catch(e){if(e.name!=="AbortError")alert(e.message)}}
 async function saveRomToFolder(game){if(!gameDir){alert("Define primeiro a pasta principal de jogos.");return}if(!await folderPermission(true)){alert("Permissão de escrita não concedida.");return}try{const response=await fetch(game.rom);if(!response.ok)throw Error("Download falhou: "+response.status);const blob=await response.blob();const ext=game.ext||game.rom.split(".").pop();const dir=await systemFolder(game.platform);const handle=await dir.getFileHandle(game.id+"."+ext,{create:true});const stream=await handle.createWritable();await stream.write(blob);await stream.close();await scanFolder();alert(game.title+" guardado em "+folderForPlatform(game.platform))}catch(e){alert("Não foi possível guardar o jogo: "+e.message)}}
@@ -117,7 +118,7 @@ function launch(game){
  $("asideDesc").textContent=game.description||("A executar "+game.platform+" no emulador integrado.");
  const core=game.core||coreFor(game.platform);
  $("playerNotice").textContent=game.platform==="PSP"&&(!window.crossOriginIsolated||!window.SharedArrayBuffer)?"PSP precisa de SharedArrayBuffer e isolamento de origem cruzada. Verifica o navegador e os cabeçalhos do site.":(game.license?"Licença do jogo: "+game.license:"ROM local. Confirma que tens direito de utilização.");
- $("stage").innerHTML='<div id="game" style="width:100%;height:100%;min-height:420px;background:#000"></div>';
+ $("stage").innerHTML='<div id="game" tabindex="0" style="width:100%;height:100%;min-height:420px;background:#000;outline:none"></div>';
  $("player").classList.add("open");$("player").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
  try{
   if(game.file)currentRomUrl=URL.createObjectURL(game.file);
@@ -127,7 +128,7 @@ function launch(game){
   window.EJS_player="#game";window.EJS_gameUrl=currentRomUrl;window.EJS_biosUrl=biosUrl||"";
   window.EJS_core=core;window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";
   window.EJS_gameName=game.title;window.EJS_language="pt-BR";window.EJS_startOnLoaded=true;
-  window.EJS_color="#d5ff45";window.EJS_threads=core==="psp";window.EJS_gameID=1;window.EJS_netplay=false;
+  window.EJS_color="#d5ff45";window.EJS_threads=core==="psp";window.EJS_gameID=1;window.EJS_netplay=false;\n  const schemes=["nes","gb","gba","snes","n64","nds","segaMD","segaCD","sega32x","segaMS","segaGG","segaSaturn","arcade","mame"];if(schemes.includes(core))window.EJS_controlScheme=core;else delete window.EJS_controlScheme;
   // Deixa o EmulatorJS aplicar o esquema nativo do core; "default" não é um esquema válido.
   const oldLoader=document.getElementById("playerun-emulator-loader");if(oldLoader)oldLoader.remove();const loader=document.createElement("script");loader.id="playerun-emulator-loader";loader.src="https://cdn.emulatorjs.org/stable/data/loader.js";
   loader.onerror=()=>{$("playerNotice").textContent="Não foi possível carregar o motor EmulatorJS. Verifica a ligação à internet."};
@@ -205,7 +206,7 @@ function renderEmulatorPage(label){
 sys.addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(!b)return;const label=b.dataset.system;const target=emulatorViews[label]||emulatorViews[label.toUpperCase()];if(target)goPage(target);});
 shell.addEventListener("click",e=>{
  const importBtn=e.target.closest("[data-emulator-import]");
- if(importBtn){const label=importBtn.dataset.emulatorImport;const map={"MEGA DRIVE":"Mega Drive","MASTER SYSTEM":"PS1","SATURN":"SATURN","PSP":"PSP","PS1":"PS1"};if(map[label])$("isoPlatform").value=map[label];$("romFiles").click();}
+ if(importBtn){const label=importBtn.dataset.emulatorImport;const map={"MEGA DRIVE":"Mega Drive","SATURN":"SATURN","PSP":"PSP","PS1":"PS1"};if(map[label])$("isoPlatform").value=map[label];$("romFiles").click();}
  if(e.target.closest("[data-emulator-scan]"))scanFolder();
 });
 
@@ -253,7 +254,7 @@ async function downloadGame(g){
    const ext=g.ext||g.url.split("?")[0].split(".").pop();
    const handle=await dir.getFileHandle(g.id+"."+ext,{create:true});const writer=await handle.createWritable();await writer.write(blob);await writer.close();
    await scanFolder();
-   const local=imported.find(x=>x.title===g.id||x.id.startsWith("folder-")&&x.file?.name===g.id+"."+ext);
+   const local=imported.find(x=>x.id.startsWith("folder-")&&x.file?.name===g.id+"."+ext&&x.platform===g.platform);
    showError("Descarregado para "+folderForPlatform(g.platform)+". A abrir no Playerun...");
    if(local)launch(local);
   }
@@ -262,7 +263,7 @@ async function downloadGame(g){
 shell.addEventListener("click",e=>{const play=e.target.closest("[data-play-local]");if(play){const g=imported.find(x=>x.id===play.dataset.playLocal);if(g)launch(g);return}const b=e.target.closest("[data-download-game]");if(!b)return;const g=STORE.find(x=>x.id===b.dataset.downloadGame);if(g)downloadGame(g);});
 $("search").addEventListener("input",()=>{render();if(STORE.length){renderStore();if(["psp","nintendo","sega","playstation","pc"].includes(activePage))renderCategory(activePage);else {const label=Object.keys(emulatorViews).find(x=>emulatorViews[x]===activePage);if(label)renderEmulatorPage(label)}}});
 function render(){const q=$("search").value.trim().toLowerCase();let list=[...imported];if(activeFilter!=="Todos"&&activeFilter!=="Minha biblioteca")list=list.filter(g=>g.platform===activeFilter);if(q)list=list.filter(g=>(g.title+" "+g.platform+" "+(g.description||"")).toLowerCase().includes(q));$("games").innerHTML=list.map(card).join("");$("empty").hidden=!!list.length;$("gameCount").textContent=String(imported.length).padStart(2,"0");$("localCount").textContent=String(imported.length).padStart(2,"0");if(typeof emulatorViews!=="undefined")for(const label of Object.keys(emulatorViews))renderEmulatorPage(label);}
-$("systems").addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(b){const f=b.dataset.system;activeFilter=["GBA","Mega Drive","PS1","PSP"].includes(f)?f:"Todos";goPage("collection");render();}});
+
 const initialPage=Object.keys(pageHashes).find(k=>pageHashes[k]===location.hash.slice(1))||"home";
 goPage(initialPage);
 async function loadPspCatalog(){
