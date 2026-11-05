@@ -1,4 +1,4 @@
-const CACHE='playerun-multiplatform-v3';
+const CACHE='playerun-emulators-v4';
 const CORE=['./','./index.html','./manifest.webmanifest','./icon.svg','./covers/battle-4tris.svg','./catalog/games.json'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
