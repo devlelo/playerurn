@@ -2,9 +2,9 @@
 <html lang="pt">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090b10"><meta name="description" content="Playerun — uma biblioteca retro para jogar no browser.">
+<meta name="theme-color" content="#090b10"><meta name="description" content="Playerun — jogos PSP, Nintendo, Sega, PlayStation e PC no mesmo catálogo.">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml">
-<title>PLAYERUN — Retro, reimaginado</title>
+<title>PLAYERUN — Jogos de várias gerações</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -106,66 +106,110 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e}
 if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.warn));
 (async()=>{try{db=await openDb();imported=await dbAll();await restoreFolder();render()}catch(e){console.warn("IndexedDB indisponível",e);render()}})();
 
-/* PLAYERUN 2.0 — navigation, store and library UX */
+/* PLAYERUN 3.0 — multi-platform discovery */
 const pageCss=document.createElement("style");
-pageCss.textContent=".view{display:none}.view.active{display:block}.store-card{min-width:0}.store-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.store-actions a,.store-actions button{font-size:10px;padding:8px 10px}.store-meta{font-size:9px;color:#9ba5b5;margin-top:7px}.store-status{font-size:10px;color:var(--acid);min-height:16px;margin-top:7px}#loadSegaPack,#saveSegaPack{display:none!important}.nav{gap:18px}.nav a{white-space:nowrap}@media(max-width:700px){.nav{display:flex;overflow-x:auto;max-width:62vw;gap:12px}.nav a{font-size:10px}.topright .search,.topright .accent{display:none}}";
+pageCss.textContent=".view{display:none}.view.active{display:block}.store-card{min-width:0}.store-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.store-actions a,.store-actions button{font-size:10px;padding:8px 10px}.store-meta{font-size:9px;color:#9ba5b5;margin-top:7px;line-height:1.5}.store-status{font-size:10px;color:var(--acid);min-height:16px;margin-top:7px;overflow-wrap:anywhere}.catalog-status{font-size:11px;color:var(--muted);margin:0 0 14px}.catalog-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.catalog-links a{font-size:10px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#ffffff08}.nav{gap:13px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;max-width:100%}.nav::-webkit-scrollbar{display:none}.nav a{font-size:11px}.store-card .cover{cursor:default}.store-card .gameinfo p{white-space:normal;min-height:34px}@media(max-width:700px){.nav{display:flex;overflow-x:auto;max-width:72vw;gap:12px}.nav a{font-size:10px}.topright .search,.topright .accent{display:none}}";
 document.head.append(pageCss);
 const shell=document.querySelector(".shell");
 const hero=document.querySelector(".hero"),stats=document.querySelector(".stats");
 const sections=[...shell.querySelectorAll(":scope > section.section")];
 const sys=sections.find(x=>x.id==="consolas"),lib=sections.find(x=>x.id==="biblioteca"),settings=sections.find(x=>x.id==="adicionar");
 const makeView=id=>{const el=document.createElement("div");el.className="view";el.id="view-"+id;shell.append(el);return el};
-const views={home:makeView("home"),store:makeView("store"),systems:makeView("systems"),collection:makeView("collection"),settings:makeView("settings")};const footer=shell.querySelector("footer");Object.values(views).forEach(v=>shell.insertBefore(v,footer));
-views.home.append(hero,stats);views.systems.append(sys);
-const store=document.createElement("section");store.className="section";store.id="descobrir";
-store.innerHTML='<div class="sectionhead"><div><h2>Descobrir e descarregar jogos</h2><p>Homebrew, demos e jogos gratuitos com origem identificada. Escolhe um título e guarda-o na tua pasta.</p></div></div><div class="filters" id="storeFilters"><button class="filter active" data-store-filter="Todos">Todos</button><button class="filter" data-store-filter="GBA">GBA</button><button class="filter" data-store-filter="Mega Drive">Mega Drive</button><button class="filter" data-store-filter="PSP">PSP</button><button class="filter" data-store-filter="PS1">PS1</button></div><div class="grid" id="storeGames"></div><div class="empty" id="storeEmpty" hidden>Não há títulos nesta categoria.</div><div class="drop" style="margin-top:24px"><h3>Explorar mais bibliotecas</h3><p>Estas fontes mantêm catálogos de homebrew e demos. Os ficheiros e licenças pertencem aos respetivos autores.</p><div class="drop-actions"><a class="secondary" href="https://store.brewology.com/psp/games/" target="_blank" rel="noopener">PSP · Brewology (jogos) ↗</a><a class="secondary" href="https://pspdev.github.io/homebrew/" target="_blank" rel="noopener">PSP Homebrew Database ↗</a><a class="secondary" href="https://www.ppsspp.org/docs/getting-started/how-to-get-demos-and-homebrew/" target="_blank" rel="noopener">Demos legais PSP ↗</a><a class="secondary" href="https://krakaton.itch.io/psx-devkit" target="_blank" rel="noopener">PS1 · Demo homebrew ↗</a></div></div>';
-views.store.append(store);views.collection.append(lib);views.settings.append(settings);
-const sysInfo=document.createElement("div");sysInfo.className="supported system-info";sysInfo.innerHTML='<h3>PlayStation — compatibilidade real</h3><div class="consolechips"><span>PS1 / PSX · SUPORTADO</span><span>PSP · SUPORTADO (EXPERIMENTAL)</span><span>PS2 · NÃO SUPORTADO</span><span>PS3 · NÃO SUPORTADO</span><span>PS4 · NÃO SUPORTADO</span><span>PS5 · NÃO SUPORTADO</span></div><p class="hint">PS1 usa o core psx. PSP usa PPSSPP e exige SharedArrayBuffer/threads; pode ser pesado e nem todos os jogos funcionam. PS2, PS3, PS4 e PS5 não estão disponíveis neste emulador. Não incluímos BIOS nem jogos comerciais.</p>';
+const views={home:makeView("home"),store:makeView("store"),psp:makeView("psp"),nintendo:makeView("nintendo"),sega:makeView("sega"),playstation:makeView("playstation"),pc:makeView("pc"),systems:makeView("systems"),collection:makeView("collection"),settings:makeView("settings")};
+const footer=shell.querySelector("footer");Object.values(views).forEach(v=>shell.insertBefore(v,footer));
+views.home.append(hero,stats);views.systems.append(sys);views.collection.append(lib);views.settings.append(settings);
+const store=document.createElement("section");store.className="section";store.innerHTML='<div class="sectionhead"><div><h2>Explorar jogos</h2><p>Jogos descarregáveis, homebrew, demos e experiências que correm no navegador.</p></div></div><div class="filters" id="storeFilters"><button class="filter active" data-store-filter="Todos">Todos</button><button class="filter" data-store-filter="PSP">PSP</button><button class="filter" data-store-filter="GBA">Nintendo / GBA</button><button class="filter" data-store-filter="Mega Drive">Sega</button><button class="filter" data-store-filter="PS1">PlayStation</button><button class="filter" data-store-filter="PC">PC / Browser</button></div><p class="catalog-status" id="catalogStatus">A carregar catálogo...</p><div class="grid" id="storeGames"></div><div class="empty" id="storeEmpty" hidden>Não há jogos nesta pesquisa.</div><div class="drop" style="margin-top:24px"><h3>Sobre os downloads</h3><p>O Playerun liga diretamente às fontes dos autores e aos repositórios. Jogos comerciais protegidos não são copiados para este projeto. Cada jogo mantém a licença indicada pela sua fonte.</p></div>';
+views.store.append(store);
+function categoryView(key,title,subtitle,links){
+ const section=document.createElement("section");section.className="section";
+ section.innerHTML='<div class="sectionhead"><div><h2>'+title+'</h2><p>'+subtitle+'</p></div></div><p class="catalog-status" id="status-'+key+'">A carregar...</p><div class="grid" id="grid-'+key+'"></div><div class="empty" id="empty-'+key+'" hidden>Este catálogo ainda não tem títulos nesta categoria.</div>'+(links?'<div class="catalog-links">'+links+'</div>':"");
+ views[key].append(section);
+}
+const sourceLink=(url,label)=>'<a href="'+url+'" target="_blank" rel="noopener">'+label+' ↗</a>';
+categoryView("psp","Jogos PSP","Homebrew, jogos independentes e projetos para a PlayStation Portable. Não confundimos homebrew com os jogos comerciais da consola.",sourceLink("https://pspdev.github.io/homebrew/","PSP Homebrew Database")+sourceLink("https://store.brewology.com/psp/games/","Brewology")+sourceLink("https://www.ppsspp.org/docs/getting-started/how-to-get-demos-and-homebrew/","Demos autorizadas"));
+categoryView("nintendo","Nintendo","Jogos homebrew e demos para plataformas Nintendo. O catálogo inicial inclui GBA; outras consolas entram quando houver ficheiros e licenças verificáveis.",sourceLink("https://github.com/gbadev-org/games","GBA Homebrew Hub")+sourceLink("https://hh.gbdev.io/","Homebrew Hub"));
+categoryView("sega","Sega","Jogos homebrew descarregáveis para Mega Drive e outras consolas Sega compatíveis.",sourceLink("https://github.com/monteslu/retro-homebrew-games","Repositório Sega Homebrew"));
+categoryView("playstation","PlayStation","Demos e homebrew para PS1. A PSP tem a sua página própria; jogos comerciais exigem uma cópia legítima do utilizador.",sourceLink("https://www.ppsspp.org/","PPSSPP")+sourceLink("https://krakaton.itch.io/psx-devkit","PS1 Homebrew Devkit"));
+categoryView("pc","PC & Browser","Aqui entram jogos open source e experiências modernas para jogar diretamente no browser ou descarregar nas páginas oficiais.",sourceLink("https://github.com/bitburner/Awesome-Browser-Game-Ports","Lista de jogos no browser")+sourceLink("https://opensourcegames.dev/","Open Source Games"));
+const sysInfo=document.createElement("div");sysInfo.className="supported system-info";sysInfo.innerHTML='<h3>Compatibilidade PlayStation</h3><div class="consolechips"><span>PS1 / PSX · SUPORTADO</span><span>PSP · EXPERIMENTAL</span><span>PS2 · NÃO SUPORTADO</span><span>PS3 · NÃO SUPORTADO</span><span>PS4 · NÃO SUPORTADO</span><span>PS5 · NÃO SUPORTADO</span></div><p class="hint">PS1 usa o core psx. PSP usa PPSSPP e exige SharedArrayBuffer/threads; o desempenho depende do navegador e do equipamento. PS2, PS3, PS4 e PS5 não estão disponíveis neste leitor. Não incluímos BIOS comerciais.</p>';
 sys.append(sysInfo);
 const nav=document.querySelector(".nav");
-nav.innerHTML='<a href="#inicio" data-page="home" class="active">Início</a><a href="#descobrir" data-page="store">Descobrir jogos</a><a href="#consolas" data-page="systems">Consolas</a><a href="#biblioteca" data-page="collection">Minha coleção</a><a href="#adicionar" data-page="settings">Configurações</a>';
-function goPage(id){Object.entries(views).forEach(([key,node])=>node.classList.toggle("active",key===id));nav.querySelectorAll("a").forEach(a=>a.classList.toggle("active",a.dataset.page===id));if(id==="store")renderStore();if(id==="collection")render();history.replaceState(null,"","#"+({home:"inicio",store:"descobrir",systems:"consolas",collection:"biblioteca",settings:"adicionar"}[id]||"inicio"))}
+nav.innerHTML='<a href="#inicio" data-page="home">Início</a><a href="#descobrir" data-page="store">Explorar</a><a href="#psp" data-page="psp">PSP</a><a href="#nintendo" data-page="nintendo">Nintendo</a><a href="#sega" data-page="sega">Sega</a><a href="#playstation" data-page="playstation">PlayStation</a><a href="#pc" data-page="pc">PC / Browser</a><a href="#consolas" data-page="systems">Consolas</a><a href="#biblioteca" data-page="collection">Biblioteca</a><a href="#adicionar" data-page="settings">Configurações</a>';
+const pageHashes={home:"inicio",store:"descobrir",psp:"psp",nintendo:"nintendo",sega:"sega",playstation:"playstation",pc:"pc",systems:"consolas",collection:"biblioteca",settings:"adicionar"};
+let activePage="home";
+let STORE=[];
+let storeFilter="Todos";
+function goPage(id){if(!views[id])id="home";activePage=id;Object.entries(views).forEach(([key,node])=>node.classList.toggle("active",key===id));nav.querySelectorAll("a").forEach(a=>a.classList.toggle("active",a.dataset.page===id));if(STORE.length){if(id==="store")renderStore();else if(["psp","nintendo","sega","playstation","pc"].includes(id))renderCategory(id)}history.replaceState(null,"","#"+pageHashes[id]);}
 nav.addEventListener("click",e=>{const a=e.target.closest("[data-page]");if(a){e.preventDefault();goPage(a.dataset.page)}});
 $("browse").onclick=()=>goPage("store");$("addHero").onclick=()=>goPage("settings");
-const STORE=[
-{id:"apotris",title:"Apotris",platform:"GBA",url:"https://raw.githubusercontent.com/gbadev-org/games/master/entries/apotris/Apotris.gba",ext:"gba",cover:"https://raw.githubusercontent.com/gbadev-org/games/master/entries/apotris/cover.gif",desc:"Puzzle de blocos homebrew para Game Boy Advance.",license:"GPL-3.0",source:"https://github.com/gbadev-org/games/tree/master/entries/apotris",type:"ROM GBA"},
-{id:"voxelburg",title:"Attack on Voxelburg",platform:"GBA",url:"https://raw.githubusercontent.com/gbadev-org/games/master/entries/attack-on-voxelburg/voxelburg_jam.gba",ext:"gba",cover:"https://raw.githubusercontent.com/gbadev-org/games/master/entries/attack-on-voxelburg/cover.png",desc:"Shooter homebrew criado para uma game jam.",license:"GPL-3.0-or-later",source:"https://github.com/gbadev-org/games/tree/master/entries/attack-on-voxelburg",type:"ROM GBA"},
-{id:"sega-pack",title:"Mega Drive — 6 jogos",platform:"Mega Drive",url:"https://github.com/monteslu/retro-homebrew-games/releases/latest/download/free-retro-games.zip",releaseApi:"https://api.github.com/repos/monteslu/retro-homebrew-games/releases/latest",assetPattern:"free-retro-games",ext:"zip",cover:"./covers/battle-4tris.svg",desc:"Tank Battle, Battle 4Tris, Pong, Snake Arena, Space Shooter e Breakout.",license:"MIT (confirmar licença de cada diretório)",source:"https://github.com/monteslu/retro-homebrew-games/releases",type:"PACK ZIP"},
-{id:"trogdor-psp",title:"Trogdor Reburninated",platform:"PSP",url:"https://github.com/Mode8fx/Trogdor-Reburninated/releases/download/v2.4/Trogdor-Reburninated-v2.4-psp.zip",releaseApi:"https://api.github.com/repos/Mode8fx/Trogdor-Reburninated/releases/tags/v2.4",assetPattern:"psp.*zip",ext:"zip",desc:"Jogo homebrew PSP; pacote específico para PSP.",license:"Consultar licença do autor",source:"https://github.com/Mode8fx/Trogdor-Reburninated/releases",type:"PACK PSP"},
-{id:"psp-homebrew",title:"Biblioteca PSP Homebrew",platform:"PSP",url:"https://pspdev.github.io/homebrew/",desc:"Catálogo comunitário de jogos, aplicações e emuladores para PSP.",license:"Licenças individuais",source:"https://github.com/pspdev/homebrew",type:"CATÁLOGO"},
-{id:"psp-brewology",title:"Brewology — Jogos PSP",platform:"PSP",url:"https://store.brewology.com/psp/games/",desc:"Catálogo amplo de homebrew PSP com downloads dos autores.",license:"Licenças individuais",source:"https://store.brewology.com/psp/games/",type:"CATÁLOGO"},
-{id:"psp-demos",title:"Demos oficiais PSP",platform:"PSP",url:"https://www.ppsspp.org/docs/getting-started/how-to-get-demos-and-homebrew/",desc:"Orientação para encontrar demos gratuitas e homebrew legal.",license:"Demos / homebrew",source:"https://www.ppsspp.org/docs/getting-started/how-to-get-demos-and-homebrew/",type:"GUIA"},
-{id:"ps1-demo",title:"PS1 — Hello Pong / Devkit",platform:"PS1",url:"https://krakaton.itch.io/psx-devkit",desc:"Projeto de desenvolvimento e demo homebrew para PlayStation original.",license:"Termos do autor",source:"https://krakaton.itch.io/psx-devkit",type:"PÁGINA DO AUTOR"},
-{id:"ps1-doom-intro",title:"PS1 — Doom Intro Demo",platform:"PS1",url:"https://luksamuk.codes/static/psx/DOOMINTRO.CHD",ext:"chd",desc:"Demonstração homebrew para PlayStation original, alojada pelo autor.",license:"Termos do autor · não redistribuir sem autorização",source:"https://luksamuk.codes/pages/psx-homebrew.html",type:"DOWNLOAD PS1"},
-{id:"ps1-wipefaux",title:"PS1 — Wipefaux",platform:"PS1",url:"https://luksamuk.codes/static/psx/WIPEFAUX.CHD",ext:"chd",desc:"Projeto homebrew PS1 disponibilizado pelo seu criador.",license:"Termos do autor · não redistribuir sem autorização",source:"https://luksamuk.codes/pages/psx-homebrew.html",type:"DOWNLOAD PS1"}
-];
-let storeFilter="Todos";
-function renderStore(){const q=$("search").value.toLowerCase().trim();const list=STORE.filter(g=>(storeFilter==="Todos"||g.platform===storeFilter)&&(!q||(g.title+" "+g.platform+" "+g.desc).toLowerCase().includes(q)));$("storeGames").innerHTML=list.map(g=>'<article class="store-card"><div class="cover">'+(g.cover?'<img loading="lazy" src="'+escapeHtml(g.cover)+'" alt="" onerror="this.remove()">':'<div class="cover-missing"><strong>'+escapeHtml(g.title)+'</strong><span>'+escapeHtml(g.platform)+'</span></div>')+'<span class="cover-label">'+escapeHtml(g.platform)+'</span><span class="cover-title">'+escapeHtml(g.title)+'</span></div><div class="gameinfo"><h3>'+escapeHtml(g.title)+'</h3><p>'+escapeHtml(g.desc)+'</p><div class="store-meta">'+escapeHtml(g.type)+' · '+escapeHtml(g.license)+'</div><div class="store-actions">'+(g.type==="CATÁLOGO"||g.type==="GUIA"||g.type==="PÁGINA DO AUTOR"?'<a class="secondary" href="'+g.url+'" target="_blank" rel="noopener">ABRIR CATÁLOGO ↗</a>':'<button class="primary" data-download-store="'+g.id+'">⬇ DESCARREGAR</button>')+'<a class="secondary" href="'+g.source+'" target="_blank" rel="noopener">FONTE ↗</a></div><div class="store-status" id="store-status-'+g.id+'"></div></div></article>').join("");$("storeEmpty").hidden=!!list.length}
-$("storeFilters").addEventListener("click",e=>{const b=e.target.closest("[data-store-filter]");if(b){storeFilter=b.dataset.storeFilter;document.querySelectorAll("[data-store-filter]").forEach(x=>x.classList.toggle("active",x===b));renderStore()}});
-$("storeGames").addEventListener("click",async e=>{const b=e.target.closest("[data-download-store]");if(!b)return;const g=STORE.find(x=>x.id===b.dataset.downloadStore),status=$("store-status-"+g.id);if(!gameDir){status.textContent="Define a pasta de jogos em Configurações primeiro.";goPage("settings");return}try{status.textContent="A preparar download...";if(!await folderPermission(true))throw Error("Permissão de escrita recusada.");let assetUrl=g.url;if(g.releaseApi){const meta=await fetch(g.releaseApi);if(!meta.ok)throw Error("Falha ao consultar release");const release=await meta.json();const asset=(release.assets||[]).find(x=>new RegExp(g.assetPattern||"\\.zip$","i").test(x.name))||(release.assets||[]).find(x=>x.name.endsWith(".zip"));if(!asset)throw Error("ZIP não encontrado na release");assetUrl=asset.url}const response=await fetch(assetUrl,{mode:"cors",headers:g.releaseApi?{Accept:"application/octet-stream"}:{}});if(!response.ok)throw Error("O servidor respondeu "+response.status);const blob=await response.blob();if(g.ext==="zip"){if(!window.JSZip)throw Error("O leitor ZIP não carregou.");const zip=await JSZip.loadAsync(blob);let count=0;for(const entry of Object.values(zip.files)){if(entry.dir||!/\.(bin|md|gen|gba|nes|sfc|smc|pbp|iso|chd|cso)$/i.test(entry.name))continue;const ext=entry.name.split(".").pop().toLowerCase();const bytes=await entry.async("blob");const filename=entry.name.split("/").pop();let target=gameDir;const parts=entry.name.split("/").filter(Boolean);for(const part of parts.slice(0,-1))target=await target.getDirectoryHandle(part,{create:true});const h=await target.getFileHandle(parts[parts.length-1],{create:true});const w=await h.createWritable();await w.write(bytes);await w.close();count++}if(g.platform==="PSP"||g.platform==="PS1")$("isoPlatform").value=g.platform;await scanFolder();status.textContent=count+" ficheiros guardados na pasta "+gameDir.name+"."}else{const h=await gameDir.getFileHandle(g.id+"."+g.ext,{create:true});const w=await h.createWritable();await w.write(blob);await w.close();if(g.platform==="PSP"||g.platform==="PS1")$("isoPlatform").value=g.platform;await scanFolder();status.textContent="Jogo guardado na pasta "+gameDir.name+"."}}catch(err){console.warn(err);status.textContent="O servidor bloqueou a gravação direta nesta pasta. Usa este link para descarregar e depois move o ficheiro para a pasta escolhida: ";const a=document.createElement("a");a.href=g.url;a.target="_blank";a.rel="noopener";a.textContent="ABRIR DOWNLOAD ↗";a.style.color="var(--acid)";status.append(a);}});
-$("search").addEventListener("input",()=>{render();renderStore()});
-document.querySelectorAll("[data-filter]").forEach(b=>{if(b.dataset.filter==="PSP"||b.dataset.filter==="PS1"){b.style.display="";}});
-const route=location.hash;if(route==="#descobrir")goPage("store");else if(route==="#consolas")goPage("systems");else if(route==="#biblioteca")goPage("collection");else if(route==="#adicionar")goPage("settings");else goPage("home");
-
-function render(){const q=$("search").value.trim().toLowerCase();let list=[...imported];if(activeFilter!=="Todos"&&activeFilter!=="Minha biblioteca")list=list.filter(g=>g.platform===activeFilter);if(q)list=list.filter(g=>(g.title+" "+g.platform+" "+(g.description||"")).toLowerCase().includes(q));$("games").innerHTML=list.map(card).join("");$("empty").hidden=!!list.length;$("gameCount").textContent=String(imported.length).padStart(2,"0");$("localCount").textContent=String(imported.length).padStart(2,"0")}
-$("systems").addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(b){const f=b.dataset.system;activeFilter=["GBA","Mega Drive","PS1","PSP"].includes(f)?f:"Todos";goPage("collection");render()}});
-
-async function loadPspCatalog(){
+function cardMarkup(g){
+ const cover=g.cover?'<img loading="lazy" src="'+escapeHtml(g.cover)+'" alt="" onerror="this.remove()">':'<div class="cover-missing"><strong>'+escapeHtml(g.title)+'</strong><span>'+escapeHtml(g.platform)+'</span></div>';
+ const action=g.mode==="download"?'<button class="primary" data-download-game="'+escapeHtml(g.id)+'">⬇ DESCARREGAR</button>':g.mode==="play"?'<a class="primary" href="'+escapeHtml(g.url)+'" target="_blank" rel="noopener">▶ JOGAR ONLINE</a>':'<a class="secondary" href="'+escapeHtml(g.url)+'" target="_blank" rel="noopener">ABRIR PÁGINA ↗</a>';
+ const details=[g.type,g.genre,g.version,g.sizeLabel,g.license].filter(Boolean).join(" · ");
+ return '<article class="store-card"><div class="cover">'+cover+'<span class="cover-label">'+escapeHtml(g.platform)+'</span><span class="cover-title">'+escapeHtml(g.title)+'</span></div><div class="gameinfo"><h3>'+escapeHtml(g.title)+'</h3><p>'+escapeHtml(g.desc||"Jogo independente.")+'</p><div class="store-meta">'+escapeHtml(details)+'</div><div class="store-actions">'+action+'<a class="secondary" href="'+escapeHtml(g.source||g.url)+'" target="_blank" rel="noopener">FONTE ↗</a></div><div class="store-status" id="store-status-'+escapeHtml(g.id)+'"></div></div></article>';
+}
+function renderGrid(id,list){const el=$(id);if(!el)return;el.innerHTML=list.map(cardMarkup).join("");}
+function renderStore(){const q=$("search").value.toLowerCase().trim();const list=STORE.filter(g=>(storeFilter==="Todos"||(storeFilter==="PC"?["PC","PC / Browser"].includes(g.platform):storeFilter==="GBA"?["GBA","NES","SNES","GB","NDS"].includes(g.platform):g.platform===storeFilter))&&(!q||(g.title+" "+g.platform+" "+g.desc+" "+(g.genre||"")).toLowerCase().includes(q)));renderGrid("storeGames",list);$("storeEmpty").hidden=!!list.length;updateCatalogStatus();}
+function renderCategory(key){const q=$("search").value.toLowerCase().trim();const predicates={psp:g=>g.platform==="PSP",nintendo:g=>["GBA","NES","SNES","GB","NDS"].includes(g.platform),sega:g=>["Mega Drive","MASTER SYSTEM"].includes(g.platform),playstation:g=>["PS1","PSP"].includes(g.platform),pc:g=>["PC","PC / Browser"].includes(g.platform)};const list=STORE.filter(predicates[key]).filter(g=>!q||(g.title+" "+g.platform+" "+g.desc+" "+(g.genre||"")).toLowerCase().includes(q));renderGrid("grid-"+key,list);$("empty-"+key).hidden=!!list.length;const status=$("status-"+key);if(status)status.textContent=list.length+" títulos nesta secção. Os catálogos externos são atualizados a partir das fontes dos autores.";}
+function updateCatalogStatus(){const psp=STORE.filter(g=>g.platform==="PSP").length;const gba=STORE.filter(g=>g.platform==="GBA").length;const sega=STORE.filter(g=>g.platform==="Mega Drive").length;const pc=STORE.filter(g=>g.platform==="PC"||g.platform==="PC / Browser").length;$("catalogStatus").textContent=STORE.length+" entradas · "+psp+" PSP · "+gba+" Nintendo/GBA · "+sega+" Sega · "+pc+" PC/Browser. O catálogo PSP recebe atualizações da comunidade.";}
+async function loadStaticCatalog(){try{const response=await fetch("./catalog/games.json",{cache:"no-cache"});if(!response.ok)throw new Error("HTTP "+response.status);const data=await response.json();STORE=data.games||[];renderStore();if(["psp","nintendo","sega","playstation","pc"].includes(activePage))renderCategory(activePage);}catch(error){console.error("Catálogo local indisponível",error);$("catalogStatus").textContent="Não foi possível carregar catalog/games.json. Verifica a ligação e atualiza a página.";}}
+$("storeFilters").addEventListener("click",e=>{const b=e.target.closest("[data-store-filter]");if(b){storeFilter=b.dataset.storeFilter;document.querySelectorAll("[data-store-filter]").forEach(x=>x.classList.toggle("active",x===b));renderStore();}});
+async function downloadGame(g){
+ const status=$("store-status-"+g.id);
+ const directFallback=()=>{status.textContent="Download direto não permitido pelo servidor. Abre a fonte e guarda o ficheiro na tua pasta de jogos: ";const a=document.createElement("a");a.href=g.url;a.target="_blank";a.rel="noopener";a.textContent="ABRIR DOWNLOAD ↗";a.style.color="var(--acid)";status.append(a);};
+ if(!gameDir){status.textContent="Define uma pasta em Configurações para guardar aqui, ou ";const a=document.createElement("a");a.href=g.url;a.target="_blank";a.rel="noopener";a.textContent="descarrega pela fonte";a.style.color="var(--acid)";status.append(a);return;}
  try{
-  const response=await fetch("https://pspdev.github.io/homebrew/catalog.json");
+  status.textContent="A preparar download...";
+  if(!await folderPermission(true))throw new Error("Permissão de escrita recusada.");
+  const response=await fetch(g.url,{mode:"cors"});if(!response.ok)throw new Error("HTTP "+response.status);
+  const blob=await response.blob();
+  if(g.ext==="zip"){
+   if(!window.JSZip)throw new Error("O leitor ZIP não carregou.");
+   const zip=await JSZip.loadAsync(blob);let count=0;
+   for(const entry of Object.values(zip.files)){
+    if(entry.dir||!/\\.(bin|md|gen|gba|nes|sfc|smc|pbp|iso|chd|cso|nds)$/i.test(entry.name))continue;
+    const parts=entry.name.split("/").filter(Boolean);if(!parts.length)continue;
+    let target=gameDir;for(const part of parts.slice(0,-1))target=await target.getDirectoryHandle(part,{create:true});
+    const handle=await target.getFileHandle(parts[parts.length-1],{create:true});const writer=await handle.createWritable();await writer.write(await entry.async("blob"));await writer.close();count++;
+   }
+   if(g.platform==="PSP"||g.platform==="PS1")$("isoPlatform").value=g.platform;
+   await scanFolder();status.textContent=count+" ficheiro(s) extraído(s) para "+gameDir.name+".";
+  }else{
+   if(["PSP","PS1"].includes(g.platform))$("isoPlatform").value=g.platform;
+   const handle=await gameDir.getFileHandle(g.id+"."+g.ext,{create:true});const writer=await handle.createWritable();await writer.write(blob);await writer.close();await scanFolder();status.textContent="Guardado em "+gameDir.name+".";
+  }
+ }catch(error){console.warn("Download Playerun:",error);directFallback();}
+}
+shell.addEventListener("click",e=>{const b=e.target.closest("[data-download-game]");if(!b)return;const g=STORE.find(x=>x.id===b.dataset.downloadGame);if(g)downloadGame(g);});
+$("search").addEventListener("input",()=>{render();if(STORE.length){renderStore();if(["psp","nintendo","sega","playstation","pc"].includes(activePage))renderCategory(activePage)}});
+function render(){const q=$("search").value.trim().toLowerCase();let list=[...imported];if(activeFilter!=="Todos"&&activeFilter!=="Minha biblioteca")list=list.filter(g=>g.platform===activeFilter);if(q)list=list.filter(g=>(g.title+" "+g.platform+" "+(g.description||"")).toLowerCase().includes(q));$("games").innerHTML=list.map(card).join("");$("empty").hidden=!!list.length;$("gameCount").textContent=String(imported.length).padStart(2,"0");$("localCount").textContent=String(imported.length).padStart(2,"0");}
+$("systems").addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(b){const f=b.dataset.system;activeFilter=["GBA","Mega Drive","PS1","PSP"].includes(f)?f:"Todos";goPage("collection");render();}});
+const initialPage=Object.keys(pageHashes).find(k=>pageHashes[k]===location.hash.slice(1))||"home";
+goPage(initialPage);
+loadStaticCatalog();
+async function loadPspCatalog(){
+ const status=$("status-psp");
+ try{
+  if(status)status.textContent="A sincronizar jogos PSP da base comunitária...";
+  const response=await fetch("https://pspdev.github.io/homebrew/catalog.json",{cache:"no-cache"});
   if(!response.ok)throw new Error("HTTP "+response.status);
-  const data=await response.json();
-  const rows=Array.isArray(data)?data:(data.apps||data.homebrew||data.entries||data.items||[]);
+  const data=await response.json();const rows=Array.isArray(data.apps)?data.apps:(Array.isArray(data)?data:[]);
+  let added=0;
   for(const row of rows){
-   if(String(row.category||"").toLowerCase()!=="game"||!row.name||!row.releases?.[0]?.url)continue;
+   if(String(row.category||"").toLowerCase()!=="game"||!row.name||!Array.isArray(row.releases)||!row.releases.length)continue;
+   const release=row.releases[0];if(!release.url)continue;
    const id="pspdb-"+String(row.id||row.name).toLowerCase().replace(/[^a-z0-9]+/g,"-");
    if(STORE.some(g=>g.id===id))continue;
-   const release=row.releases[0];
-   STORE.push({id,title:row.name,platform:"PSP",url:release.url,ext:release.url.toLowerCase().includes(".pbp")?"pbp":"zip",cover:row.media?.screenshots?.[0]||"",desc:row.summary||"Jogo homebrew para PSP.",license:row.license||"Consultar licença do autor",source:row.source||"https://pspdev.github.io/homebrew/",type:"DOWNLOAD PSP"});
+   let ext="zip";try{const path=new URL(release.url).pathname.toLowerCase();if(path.endsWith(".pbp"))ext="pbp";else if(path.endsWith(".iso"))ext="iso";else if(path.endsWith(".cso"))ext="cso";}catch{}
+   STORE.push({id,title:row.name,platform:"PSP",url:release.url,ext,cover:row.media?.icon||row.media?.screenshots?.[0]||"",desc:row.summary||"Jogo homebrew para PSP.",genre:(row.tags||[]).slice(0,3).join(" / "),license:row.license||"Consultar licença do autor",source:row.source||row.website||"https://pspdev.github.io/homebrew/"+encodeURIComponent(row.id||"")+".html",type:"HOMEBREW PSP",mode:"download",version:release.tag||"",sizeLabel:release.size?formatBytes(release.size):""});
+   added++;
   }
-  renderStore();
- }catch(error){console.warn("Não foi possível atualizar o catálogo PSP",error)}
+  renderStore();renderCategory("psp");renderCategory("playstation");
+  if(status)status.textContent=STORE.filter(g=>g.platform==="PSP").length+" títulos PSP disponíveis. "+added+" novos títulos sincronizados.";
+ }catch(error){console.warn("Catálogo PSP não sincronizado",error);if(status)status.textContent="Não foi possível atualizar a base PSP agora. Os títulos locais continuam disponíveis.";}
 }
+function formatBytes(bytes){if(!Number.isFinite(Number(bytes)))return"";const n=Number(bytes);return n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB";}
 loadPspCatalog();
+
 </script>
 </body></html>
