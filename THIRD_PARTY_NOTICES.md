@@ -1,5 +1,10 @@
 # Third-party notices
 
+## JSZip
+- Project: https://stuk.github.io/jszip/
+- License: MIT
+- Loaded from cdnjs to unpack the optional Mega Drive homebrew ZIP in the browser.
+
 ## EmulatorJS
 - Project: https://github.com/EmulatorJS/EmulatorJS
 - License: GNU General Public License v3.0 (GPL-3.0)
