@@ -234,13 +234,14 @@
       navigator.serviceWorker.ready.then(registration => registration.update()).catch(() => {});
       navigator.serviceWorker.addEventListener("controllerchange", () => { if (!sessionStorage.getItem("playerun-sw-reloaded")) { sessionStorage.setItem("playerun-sw-reloaded","1"); } });
     }
-    const oldRender = typeof render === "function" ? render : null;
-    if (oldRender && !window.__playerunRenderWrapped) {
+    if (typeof render === "function" && !window.__playerunRenderWrapped) {
       window.__playerunRenderWrapped = true;
-      // Existing renderer is lexical; refresh local panel whenever IndexedDB changes via its public UI events.
-      document.addEventListener("click", event => {
-        if (event.target.closest("#pickRoms,#pickFolder,#scanGameDir,#chooseGameDir")) setTimeout(renderLocalHome,700);
-      });
+      const originalRender = render;
+      render = function(...args) {
+        const result = originalRender.apply(this, args);
+        renderLocalHome();
+        return result;
+      };
     }
   }
 
