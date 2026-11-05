@@ -94,7 +94,7 @@ async function scanFolder(){
  for(const item of files){
   const root=item.path.split("/")[0],p=folderPlatform[root]||platformFor(item.file);if(p==="Outro")continue;
   const rid="folder-"+item.path+"-"+item.file.size;seen.add(rid);
-  await dbPut({id:rid,title:item.file.name.replace(/\\.[^.]+$/,""),platform:p,core:coreFor(p),description:"Pasta: "+item.path,file:item.file,added:Date.now(),folder:folderForPlatform(p)});
+  await dbPut({id:rid,title:item.file.name.replace(/\.[^.]+$/,""),platform:p,core:coreFor(p),description:"Pasta: "+item.path,file:item.file,added:Date.now(),folder:folderForPlatform(p)});
  }
  const allRows=await dbAll();for(const row of allRows){if(String(row.id).startsWith("folder-")&&!seen.has(row.id))await dbDelete(row.id)}
  imported=await dbAll();render();
@@ -128,7 +128,8 @@ function launch(game){
   window.EJS_player="#game";window.EJS_gameUrl=currentRomUrl;window.EJS_biosUrl=biosUrl||"";
   window.EJS_core=core;window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";
   window.EJS_gameName=game.title;window.EJS_language="pt-BR";window.EJS_startOnLoaded=true;
-  window.EJS_color="#d5ff45";window.EJS_threads=core==="psp";window.EJS_gameID=1;window.EJS_netplay=false;\n  const schemes=["nes","gb","gba","snes","n64","nds","segaMD","segaCD","sega32x","segaMS","segaGG","segaSaturn","arcade","mame"];if(schemes.includes(core))window.EJS_controlScheme=core;else delete window.EJS_controlScheme;
+  window.EJS_color="#d5ff45";window.EJS_threads=core==="psp";window.EJS_gameID=1;window.EJS_netplay=false;
+  const schemes=["nes","gb","gba","snes","n64","nds","segaMD","segaCD","sega32x","segaMS","segaGG","segaSaturn","arcade","mame"];if(schemes.includes(core))window.EJS_controlScheme=core;else delete window.EJS_controlScheme;
   // Deixa o EmulatorJS aplicar o esquema nativo do core; "default" não é um esquema válido.
   const oldLoader=document.getElementById("playerun-emulator-loader");if(oldLoader)oldLoader.remove();const loader=document.createElement("script");loader.id="playerun-emulator-loader";loader.src="https://cdn.emulatorjs.org/stable/data/loader.js";
   loader.onerror=()=>{$("playerNotice").textContent="Não foi possível carregar o motor EmulatorJS. Verifica a ligação à internet."};
@@ -241,7 +242,7 @@ async function downloadGame(g){
    if(!window.JSZip)throw new Error("O leitor ZIP não carregou.");
    const zip=await JSZip.loadAsync(blob);let count=0;
    for(const entry of Object.values(zip.files)){
-    if(entry.dir||!/\\.(bin|md|gen|gba|gb|gbc|nes|sfc|smc|pbp|iso|chd|cso|nds|sms|z64|n64|v64)$/i.test(entry.name))continue;
+    if(entry.dir||!/\.(bin|md|gen|gba|gb|gbc|nes|sfc|smc|pbp|iso|chd|cso|nds|sms|z64|n64|v64)$/i.test(entry.name))continue;
     const ext=entry.name.split(".").pop().toLowerCase();
     const platform=["pbp","cso"].includes(ext)?"PSP":g.platform;
     const dir=await systemFolder(platform);
