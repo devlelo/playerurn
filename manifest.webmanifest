@@ -1,7 +1,7 @@
 {
-  "name": "Playerurn — Games Hub",
-  "short_name": "Playerurn",
-  "description": "Jogos arcade e retro no navegador.",
+  "name": "Playerun — Games Hub",
+  "short_name": "Playerun",
+  "description": "Biblioteca de jogos arcade, HTML5 e retro no navegador.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
