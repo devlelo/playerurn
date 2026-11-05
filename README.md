@@ -5,7 +5,7 @@ Playerun is a retro game library and browser emulator PWA. The interface is an o
 ## Current playable catalogue
 - Apotris — Game Boy Advance homebrew, GPL-3.0. ROM and cover are served from the community-maintained GBA Homebrew Hub.
 - Attack on Voxelburg — Game Boy Advance homebrew, GPL-3.0-or-later. ROM and cover are served from the GBA Homebrew Hub.
-- Battle 4Tris — Sega Mega Drive homebrew, MIT. ROM is offered by the original project's GitHub release; if browser CORS blocks automatic loading, download it from the source and import it.
+- Battle 4Tris — Sega Mega Drive homebrew, MIT. ROM is offered by the original project's GitHub release; if browser CORS blocks automatic loading, download it from the source and import it. The release also contains a ZIP pack with six Mega Drive homebrew games; download it from the app and import the ZIP to add the collection to your local library.
 
 ## Supported emulator systems
 NES, SNES, Game Boy / Color, Game Boy Advance, Nintendo 64, Nintendo DS, Sega Mega Drive / Genesis, Master System, Saturn, PlayStation 1, PSP and Arcade (core support and performance vary).
