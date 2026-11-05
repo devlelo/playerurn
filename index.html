@@ -70,7 +70,7 @@ const CATALOG=[
 ];
 let imported=[],activeFilter="Todos",currentGame=null,currentRomUrl=null,biosUrl=null,deferred=null,db=null,gameDir=null;
 function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function platformFor(file){const ext=file.name.split(".").pop().toLowerCase();if(["nes","unf"].includes(ext))return "NES";if(["sfc","smc"].includes(ext))return "SNES";if(["gb","gbc"].includes(ext))return "GB";if(ext==="gba")return "GBA";if(["n64","z64","v64"].includes(ext))return "N64";if(ext==="nds")return "NDS";if(ext==="sms")return "MASTER SYSTEM";if(["md","gen","32x"].includes(ext))return "Mega Drive";if(["pbp","cso"].includes(ext))return "PSP";if(["iso","cue","chd","bin"].includes(ext))return $("isoPlatform").value;return "Outro"}
+function platformFor(file){const ext=file.name.split(".").pop().toLowerCase();if(["nes","unf"].includes(ext))return "NES";if(["sfc","smc"].includes(ext))return "SNES";if(["gb","gbc"].includes(ext))return "GB";if(ext==="gba")return "GBA";if(["n64","z64","v64"].includes(ext))return "N64";if(ext==="nds")return "NDS";if(ext==="sms")return "MASTER SYSTEM";if(["md","gen","32x"].includes(ext))return "Mega Drive";if(["pbp","cso"].includes(ext))return "PSP";if(["iso","cue","chd","bin"].includes(ext))return $("isoPlatform").value||"Outro";return "Outro"}
 function coreFor(platform){const normalized=platform==="Mega Drive"?"MEGA DRIVE":platform;const s=SYSTEMS.find(x=>x.label===normalized||x.name===platform);return s?s.core:"gba"}
 function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open("playerun-retro-library",2);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains("roms"))d.createObjectStore("roms",{keyPath:"id"});if(!d.objectStoreNames.contains("settings"))d.createObjectStore("settings",{keyPath:"id"})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 function dbAll(){return new Promise((resolve,reject)=>{const tx=db.transaction("roms","readonly"),r=tx.objectStore("roms").getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}
@@ -101,7 +101,7 @@ async function scanFolder(){
 }
 async function chooseFolder(){if(!window.showDirectoryPicker){alert("Este navegador não suporta ligação direta de pastas. Usa Importar pasta como alternativa.");return}try{gameDir=await window.showDirectoryPicker({id:"playerun-games",mode:"readwrite"});await saveFolder(gameDir);await scanFolder()}catch(e){if(e.name!=="AbortError")alert(e.message)}}
 async function saveRomToFolder(game){if(!gameDir){alert("Define primeiro a pasta principal de jogos.");return}if(!await folderPermission(true)){alert("Permissão de escrita não concedida.");return}try{const response=await fetch(game.rom);if(!response.ok)throw Error("Download falhou: "+response.status);const blob=await response.blob();const ext=game.ext||game.rom.split(".").pop();const dir=await systemFolder(game.platform);const handle=await dir.getFileHandle(game.id+"."+ext,{create:true});const stream=await handle.createWritable();await stream.write(blob);await stream.close();await scanFolder();alert(game.title+" guardado em "+folderForPlatform(game.platform))}catch(e){alert("Não foi possível guardar o jogo: "+e.message)}}
-async function restoreFolder(){try{gameDir=await getSavedFolder();if(gameDir)$("folderStatus").textContent="Pasta selecionada: "+gameDir.name+". Clica em Ler pasta para atualizar."}catch(e){console.warn(e)}}
+async function restoreFolder(){try{gameDir=await getSavedFolder();if(gameDir)$("folderStatus").textContent="Pasta principal: "+gameDir.name+". O Playerun cria automaticamente uma subpasta para cada emulador."}catch(e){console.warn(e)}}
 
 function systems(){ $("systems").innerHTML=SYSTEMS.map(s=>'<button class="system" data-system="'+s.label+'"><span class="sys-icon">'+s.icon+'</span><b>'+s.label+'</b><small>'+s.hint+'</small></button>').join("")}
 function cover(g){if(g.cover)return '<img loading="lazy" src="'+escapeHtml(g.cover)+'" alt="Capa de '+escapeHtml(g.title)+'" onerror="this.nextElementSibling.hidden=false;this.remove()"><div class="cover-missing" hidden><strong>'+escapeHtml(g.title)+'</strong><span>'+escapeHtml(g.platform)+'</span></div>';return '<div class="cover-missing"><strong>'+escapeHtml(g.title)+'</strong><span>'+escapeHtml(g.platform)+' · CAPA NÃO DISPONÍVEL</span></div>'}
@@ -128,8 +128,8 @@ function launch(game){
   window.EJS_core=core;window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";
   window.EJS_gameName=game.title;window.EJS_language="pt-BR";window.EJS_startOnLoaded=true;
   window.EJS_color="#d5ff45";window.EJS_threads=core==="psp";window.EJS_gameID=1;window.EJS_netplay=false;
-  window.EJS_gamepad=true;window.EJS_virtualGamepad=true;window.EJS_controlScheme="default";
-  const loader=document.createElement("script");loader.src="https://cdn.emulatorjs.org/stable/data/loader.js";
+  // Deixa o EmulatorJS aplicar o esquema nativo do core; "default" não é um esquema válido.
+  const oldLoader=document.getElementById("playerun-emulator-loader");if(oldLoader)oldLoader.remove();const loader=document.createElement("script");loader.id="playerun-emulator-loader";loader.src="https://cdn.emulatorjs.org/stable/data/loader.js";
   loader.onerror=()=>{$("playerNotice").textContent="Não foi possível carregar o motor EmulatorJS. Verifica a ligação à internet."};
   document.body.append(loader);
   $("controlNote").textContent="Teclado: setas + Z/X/A/S, Enter e Shift. Comando USB/Bluetooth: liga antes de iniciar o jogo e clica na área do emulador. No telemóvel, ativa os controlos táteis do EmulatorJS.";
@@ -205,7 +205,7 @@ function renderEmulatorPage(label){
 sys.addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(!b)return;const label=b.dataset.system;const target=emulatorViews[label]||emulatorViews[label.toUpperCase()];if(target)goPage(target);});
 shell.addEventListener("click",e=>{
  const importBtn=e.target.closest("[data-emulator-import]");
- if(importBtn){$("isoPlatform").value=importBtn.dataset.emulatorImport;$("romFiles").click();}
+ if(importBtn){const label=importBtn.dataset.emulatorImport;const map={"MEGA DRIVE":"Mega Drive","MASTER SYSTEM":"PS1","SATURN":"SATURN","PSP":"PSP","PS1":"PS1"};if(map[label])$("isoPlatform").value=map[label];$("romFiles").click();}
  if(e.target.closest("[data-emulator-scan]"))scanFolder();
 });
 
