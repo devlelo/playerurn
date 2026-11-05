@@ -200,7 +200,8 @@ async function loadPspCatalog(){
    const id="pspdb-"+String(row.id||row.name).toLowerCase().replace(/[^a-z0-9]+/g,"-");
    if(STORE.some(g=>g.id===id))continue;
    let ext="zip";try{const path=new URL(release.url).pathname.toLowerCase();if(path.endsWith(".pbp"))ext="pbp";else if(path.endsWith(".iso"))ext="iso";else if(path.endsWith(".cso"))ext="cso";}catch{}
-   STORE.push({id,title:row.name,platform:"PSP",url:release.url,ext,cover:row.media?.icon||row.media?.screenshots?.[0]||"",desc:row.summary||"Jogo homebrew para PSP.",genre:(row.tags||[]).slice(0,3).join(" / "),license:row.license||"Consultar licença do autor",source:row.source||row.website||"https://pspdev.github.io/homebrew/"+encodeURIComponent(row.id||"")+".html",type:"HOMEBREW PSP",mode:"download",version:release.tag||"",sizeLabel:release.size?formatBytes(release.size):""});
+   const mediaPath=row.media?.icon||row.media?.screenshots?.[0]||"";const cover=mediaPath?( /^https?:\\/\\//i.test(mediaPath)?mediaPath:"https://pspdev.github.io/homebrew/"+String(mediaPath).replace(/^\\/+/, "") ):"";
+   STORE.push({id,title:row.name,platform:"PSP",url:release.url,ext,cover,desc:(row.summary||"Jogo homebrew para PSP.")+(row.requires_additional_files?" Requer ficheiros adicionais do utilizador.":""),genre:(row.tags||[]).slice(0,3).join(" / "),license:row.license||"Consultar licença do autor",source:row.source||row.website||"https://pspdev.github.io/homebrew/"+encodeURIComponent(row.id||"")+".html",type:"HOMEBREW PSP",mode:"download",version:release.tag||"",sizeLabel:release.size?formatBytes(release.size):""});
    added++;
   }
   renderStore();renderCategory("psp");renderCategory("playstation");
