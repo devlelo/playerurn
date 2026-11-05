@@ -186,7 +186,6 @@ function render(){const q=$("search").value.trim().toLowerCase();let list=[...im
 $("systems").addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(b){const f=b.dataset.system;activeFilter=["GBA","Mega Drive","PS1","PSP"].includes(f)?f:"Todos";goPage("collection");render();}});
 const initialPage=Object.keys(pageHashes).find(k=>pageHashes[k]===location.hash.slice(1))||"home";
 goPage(initialPage);
-loadStaticCatalog();
 async function loadPspCatalog(){
  const status=$("status-psp");
  try{
@@ -209,7 +208,7 @@ async function loadPspCatalog(){
  }catch(error){console.warn("Catálogo PSP não sincronizado",error);if(status)status.textContent="Não foi possível atualizar a base PSP agora. Os títulos locais continuam disponíveis.";}
 }
 function formatBytes(bytes){if(!Number.isFinite(Number(bytes)))return"";const n=Number(bytes);return n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB";}
-loadPspCatalog();
+loadStaticCatalog().then(loadPspCatalog);
 
 </script>
 </body></html>
