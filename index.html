@@ -70,7 +70,7 @@ const CATALOG=[
 ];
 let imported=[],activeFilter="Todos",currentGame=null,currentRomUrl=null,biosUrl=null,deferred=null,db=null,gameDir=null;
 function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function platformFor(file){const ext=file.name.split(".").pop().toLowerCase();if(["nes","unf"].includes(ext))return "NES";if(["sfc","smc"].includes(ext))return "SNES";if(["gb","gbc"].includes(ext))return "GB";if(ext==="gba")return "GBA";if(["n64","z64","v64"].includes(ext))return "N64";if(ext==="nds")return "NDS";if(ext==="sms")return "MASTER SYSTEM";if(["md","gen","32x"].includes(ext))return "Mega Drive";if(["iso","cue","chd","bin"].includes(ext))return $("isoPlatform").value;if(["pbp","cso"].includes(ext))return "PSP";return "Outro"}
+function platformFor(file){const ext=file.name.split(".").pop().toLowerCase();if(["nes","unf"].includes(ext))return "NES";if(["sfc","smc"].includes(ext))return "SNES";if(["gb","gbc"].includes(ext))return "GB";if(ext==="gba")return "GBA";if(["n64","z64","v64"].includes(ext))return "N64";if(ext==="nds")return "NDS";if(ext==="sms")return "MASTER SYSTEM";if(["md","gen","32x"].includes(ext))return "Mega Drive";if(["pbp","cso"].includes(ext))return "PSP";if(["iso","cue","chd","bin"].includes(ext))return $("isoPlatform").value;return "Outro"}
 function coreFor(platform){const normalized=platform==="Mega Drive"?"MEGA DRIVE":platform;const s=SYSTEMS.find(x=>x.label===normalized||x.name===platform);return s?s.core:"gba"}
 function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open("playerun-retro-library",2);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains("roms"))d.createObjectStore("roms",{keyPath:"id"});if(!d.objectStoreNames.contains("settings"))d.createObjectStore("settings",{keyPath:"id"})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 function dbAll(){return new Promise((resolve,reject)=>{const tx=db.transaction("roms","readonly"),r=tx.objectStore("roms").getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}
@@ -81,9 +81,26 @@ function saveFolder(handle){return new Promise((resolve,reject)=>{const tx=db.tr
 function isGameFile(name){return /\.(nes|unf|sfc|smc|gba|gb|gbc|md|gen|bin|32x|sms|n64|z64|v64|nds|iso|cue|chd|pbp|cso)$/i.test(name)}
 async function folderPermission(write){const opts=write?{mode:"readwrite"}:{};if(await gameDir.queryPermission(opts)==="granted")return true;return await gameDir.requestPermission(opts)==="granted"}
 async function readFolder(dir,path=""){let found=[];for await(const e of dir.values()){if(e.kind==="directory"){found=found.concat(await readFolder(e,path+e.name+"/"))}else if(isGameFile(e.name)){found.push({file:await e.getFile(),path:path+e.name})}}return found}
-async function scanFolder(){if(!gameDir){$("folderStatus").textContent="Escolhe primeiro a pasta de jogos.";return}if(!await folderPermission(false)){ $("folderStatus").textContent="Permissão de leitura não concedida.";return}const files=await readFolder(gameDir);const seen=new Set();for(const item of files){const p=platformFor(item.file);if(p==="Outro")continue;const rid="folder-"+item.path+"-"+item.file.size;seen.add(rid);await dbPut({id:rid,title:item.file.name.replace(/\.[^.]+$/,""),platform:p,core:coreFor(p),description:"Pasta: "+item.path,file:item.file,added:Date.now()})}const allRows=await dbAll();for(const row of allRows){if(String(row.id).startsWith("folder-")&&!seen.has(row.id))await dbDelete(row.id)}imported=await dbAll();render();$("folderStatus").textContent=files.length+" jogo(s) encontrados em "+gameDir.name}
+function folderForPlatform(platform){
+ const names={"NES":"Nintendo NES","SNES":"Super Nintendo","GB":"Game Boy","GBA":"Game Boy Advance","N64":"Nintendo 64","NDS":"Nintendo DS","Mega Drive":"Sega Mega Drive","MASTER SYSTEM":"Sega Master System","SATURN":"Sega Saturn","PS1":"PlayStation 1","PSP":"PlayStation Portable","ARCADE":"Arcade"};
+ return names[platform]||"Outros";
+}
+async function systemFolder(platform,create=true){return await gameDir.getDirectoryHandle(folderForPlatform(platform),{create})}
+async function scanFolder(){
+ if(!gameDir){$("folderStatus").textContent="Escolhe primeiro a pasta principal de jogos.";return}
+ if(!await folderPermission(false)){$("folderStatus").textContent="Permissão de leitura não concedida.";return}
+ const files=await readFolder(gameDir),seen=new Set();
+ for(const item of files){
+  const p=platformFor(item.file);if(p==="Outro")continue;
+  const rid="folder-"+item.path+"-"+item.file.size;seen.add(rid);
+  await dbPut({id:rid,title:item.file.name.replace(/\\.[^.]+$/,""),platform:p,core:coreFor(p),description:"Pasta: "+item.path,file:item.file,added:Date.now(),folder:folderForPlatform(p)});
+ }
+ const allRows=await dbAll();for(const row of allRows){if(String(row.id).startsWith("folder-")&&!seen.has(row.id))await dbDelete(row.id)}
+ imported=await dbAll();render();
+ $("folderStatus").textContent=files.length+" ficheiro(s) analisados. A organização recomendada é: "+Object.values({"PSP":"PlayStation Portable","PS1":"PlayStation 1","GBA":"Game Boy Advance","NES":"Nintendo NES","SNES":"Super Nintendo","Mega Drive":"Sega Mega Drive"}).join(" · ")+".";
+}
 async function chooseFolder(){if(!window.showDirectoryPicker){alert("Este navegador não suporta ligação direta de pastas. Usa Importar pasta como alternativa.");return}try{gameDir=await window.showDirectoryPicker({id:"playerun-games",mode:"readwrite"});await saveFolder(gameDir);await scanFolder()}catch(e){if(e.name!=="AbortError")alert(e.message)}}
-async function saveRomToFolder(game){if(!gameDir){alert("Define primeiro a pasta de jogos.");return}if(!await folderPermission(true)){alert("Permissão de escrita não concedida.");return}try{const response=await fetch(game.rom);if(!response.ok)throw Error("Download falhou: "+response.status);const blob=await response.blob();const ext=game.ext||game.rom.split(".").pop();const filename=game.id+"."+ext;const handle=await gameDir.getFileHandle(filename,{create:true});const stream=await handle.createWritable();await stream.write(blob);await stream.close();await scanFolder();alert(game.title+" guardado na pasta "+gameDir.name)}catch(e){alert("Não foi possível guardar o jogo: "+e.message)}}
+async function saveRomToFolder(game){if(!gameDir){alert("Define primeiro a pasta principal de jogos.");return}if(!await folderPermission(true)){alert("Permissão de escrita não concedida.");return}try{const response=await fetch(game.rom);if(!response.ok)throw Error("Download falhou: "+response.status);const blob=await response.blob();const ext=game.ext||game.rom.split(".").pop();const dir=await systemFolder(game.platform);const handle=await dir.getFileHandle(game.id+"."+ext,{create:true});const stream=await handle.createWritable();await stream.write(blob);await stream.close();await scanFolder();alert(game.title+" guardado em "+folderForPlatform(game.platform))}catch(e){alert("Não foi possível guardar o jogo: "+e.message)}}
 async function restoreFolder(){try{gameDir=await getSavedFolder();if(gameDir)$("folderStatus").textContent="Pasta selecionada: "+gameDir.name+". Clica em Ler pasta para atualizar."}catch(e){console.warn(e)}}
 
 function systems(){ $("systems").innerHTML=SYSTEMS.map(s=>'<button class="system" data-system="'+s.label+'"><span class="sys-icon">'+s.icon+'</span><b>'+s.label+'</b><small>'+s.hint+'</small></button>').join("")}
@@ -92,8 +109,35 @@ function card(g){return '<article class="game" data-game="'+escapeHtml(g.id)+'">
 function render(){const q=$("search").value.trim().toLowerCase();let list=[...imported];if(activeFilter!=="Todos"&&activeFilter!=="Minha biblioteca")list=list.filter(g=>g.platform===activeFilter);if(q)list=list.filter(g=>(g.title+" "+g.platform+" "+(g.description||"")).toLowerCase().includes(q));$("games").innerHTML=list.map(card).join("");$("empty").hidden=!!list.length;$("gameCount").textContent=String(imported.length).padStart(2,"0");$("localCount").textContent=String(imported.length).padStart(2,"0")}
 function setFilter(f){activeFilter=f;document.querySelectorAll("[data-filter]").forEach(b=>b.classList.toggle("active",b.dataset.filter===f));render()}
 async function importFiles(files){for(const file of Array.from(files||[])){if(file.name.toLowerCase().endsWith(".zip")){if(!window.JSZip){alert("O leitor de ZIP não carregou. Verifica a internet e tenta novamente.");continue}try{const zip=await JSZip.loadAsync(file);const entries=Object.values(zip.files).filter(x=>!x.dir&&/\.(bin|gba|gb|gbc|nes|sfc|smc|md|gen|nds|iso|cue|chd|cso|pbp|sms|z64|n64|v64)$/i.test(x.name));for(const entry of entries){const path=entry.name.toLowerCase();const match=[["tank-battle","Tank Battle"],["battle-4tris","Battle 4Tris"],["snake","Snake Arena"],["space-shooter","Space Shooter"],["breakout","Breakout"],["pong","Pong"]].find(x=>path.includes(x[0]));const title=match?match[1]:entry.name.split("/").pop().replace(/\.[^.]+$/,"").replace(/[_-]+/g," ");const ext=entry.name.split(".").pop().toLowerCase();const platform=ext==="pbp"&&/psp/i.test(entry.name)?"PSP":(["md","gen"].includes(ext)||ext==="bin"&&/genesis|mega|sega/i.test(entry.name)?"Mega Drive":platformFor({name:entry.name}));const blob=await entry.async("blob");await dbPut({id:"zip-"+entry.name+"-"+blob.size,title,platform,core:coreFor(platform),description:"Homebrew importado do pack Sega",file:blob,added:Date.now()})}}catch(err){console.warn(err);alert("Não foi possível extrair este ZIP. Tenta descarregar novamente o pack.")}continue}const platform=platformFor(file);if(platform==="Outro")continue;const id="local-"+file.name+"-"+file.size;await dbPut({id,title:file.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," "),platform,core:coreFor(platform),description:"Importado da tua biblioteca local",file:file,added:Date.now()})}imported=await dbAll();render();$("localCount").textContent=String(imported.length).padStart(2,"0")}
-function playerDoc(game,romUrl){const core=game.core||coreFor(game.platform);const isPsp=core==="psp";const name=JSON.stringify(game.title);const url=JSON.stringify(romUrl);const bios=JSON.stringify(biosUrl||"");const data=JSON.stringify("https://cdn.emulatorjs.org/stable/data/");return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#game{margin:0;width:100%;height:100%;background:#000;overflow:hidden}#game{min-height:100vh}</style></head><body><div id="game"></div><script>window.EJS_player="#game";window.EJS_gameUrl='+url+';window.EJS_biosUrl='+bios+';window.EJS_core='+JSON.stringify(core)+';window.EJS_pathtodata='+data+';window.EJS_gameName='+name+';window.EJS_language="pt-BR";window.EJS_startOnLoaded=true;window.EJS_color="#d5ff45";window.EJS_threads='+String(isPsp)+';window.EJS_gameID=1;window.EJS_netplay=false;<\/script><script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script></body></html>'}
-async function launch(game){currentGame=game;if(currentRomUrl&&currentRomUrl.startsWith("blob:"))URL.revokeObjectURL(currentRomUrl);currentRomUrl=null;$("playingTitle").textContent=game.title;$("asideTitle").textContent=game.title;$("asideDesc").textContent=game.description||("A executar "+game.platform+" no emulador integrado.");$("playerNotice").textContent=game.platform==="PSP"&&!crossOriginIsolated?"PSP exige isolamento de origem cruzada e SharedArrayBuffer. Este navegador/servidor pode não cumprir esse requisito.":(game.license?"Licença do jogo: "+game.license:"ROM pessoal. Confirma que tens direito de utilização.");$("stage").innerHTML="<div style=\"color:#aeb8c8;text-align:center;padding:30px\">A preparar "+escapeHtml(game.title)+"...</div>";$("player").classList.add("open");$("player").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";try{if(game.file){currentRomUrl=URL.createObjectURL(game.file)}else{const response=await fetch(game.rom,{mode:"cors"});if(!response.ok)throw new Error("Download indisponível ("+response.status+")");const blob=await response.blob();currentRomUrl=URL.createObjectURL(blob)}const frame=document.createElement("iframe");frame.allow="autoplay; fullscreen; gamepad";frame.allowFullscreen=true;frame.title="Emulador "+game.title;frame.srcdoc=playerDoc(game,currentRomUrl);$("stage").innerHTML="";$("stage").append(frame)}catch(err){$("stage").innerHTML="<div style=\"max-width:480px;padding:28px;text-align:center;color:#e8ebf2\"><div style=\"font-size:34px\">⚠</div><h2 style=\"font-family:Barlow Condensed;font-size:28px\">Não consegui carregar a ROM automaticamente</h2><p style=\"color:#aeb8c8;font-size:12px\">Podes descarregar o ficheiro na fonte original e importá-lo no Playerun. O jogo continua a ser executado pelo emulador interno.</p><a class=\"primary\" style=\"display:inline-block;margin-top:12px\" href=\""+escapeHtml(game.rom||game.source)+"\" target=\"_blank\" rel=\"noopener\">OBTER FICHEIRO ↗</a></div>";console.warn(err)}}
+function launch(game){
+ currentGame=game;
+ if(currentRomUrl&&currentRomUrl.startsWith("blob:"))URL.revokeObjectURL(currentRomUrl);
+ currentRomUrl=null;
+ $("playingTitle").textContent=game.title;$("asideTitle").textContent=game.title;
+ $("asideDesc").textContent=game.description||("A executar "+game.platform+" no emulador integrado.");
+ const core=game.core||coreFor(game.platform);
+ $("playerNotice").textContent=game.platform==="PSP"&&(!window.crossOriginIsolated||!window.SharedArrayBuffer)?"PSP precisa de SharedArrayBuffer e isolamento de origem cruzada. Verifica o navegador e os cabeçalhos do site.":(game.license?"Licença do jogo: "+game.license:"ROM local. Confirma que tens direito de utilização.");
+ $("stage").innerHTML='<div id="game" style="width:100%;height:100%;min-height:420px;background:#000"></div>';
+ $("player").classList.add("open");$("player").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
+ try{
+  if(game.file)currentRomUrl=URL.createObjectURL(game.file);
+  else if(game.rom){const frameError="Este título ainda não foi descarregado para a biblioteca.";throw new Error(frameError)}
+  else throw new Error("Ficheiro do jogo não encontrado.");
+  // Executa EmulatorJS diretamente na página principal, sem iframe: teclado e gamepad chegam ao emulador.
+  window.EJS_player="#game";window.EJS_gameUrl=currentRomUrl;window.EJS_biosUrl=biosUrl||"";
+  window.EJS_core=core;window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";
+  window.EJS_gameName=game.title;window.EJS_language="pt-BR";window.EJS_startOnLoaded=true;
+  window.EJS_color="#d5ff45";window.EJS_threads=core==="psp";window.EJS_gameID=1;window.EJS_netplay=false;
+  window.EJS_gamepad=true;window.EJS_virtualGamepad=true;window.EJS_controlScheme="default";
+  const loader=document.createElement("script");loader.src="https://cdn.emulatorjs.org/stable/data/loader.js";
+  loader.onerror=()=>{$("playerNotice").textContent="Não foi possível carregar o motor EmulatorJS. Verifica a ligação à internet."};
+  document.body.append(loader);
+  $("controlNote").textContent="Teclado: setas + Z/X/A/S, Enter e Shift. Comando USB/Bluetooth: liga antes de iniciar o jogo e clica na área do emulador. No telemóvel, ativa os controlos táteis do EmulatorJS.";
+ }catch(err){
+  $("stage").innerHTML='<div style="max-width:480px;padding:28px;text-align:center;color:#e8ebf2"><div style="font-size:34px">⚠</div><h2 style="font-family:Barlow Condensed;font-size:28px">Jogo ainda não está na biblioteca</h2><p style="color:#aeb8c8;font-size:12px">'+escapeHtml(err.message)+'</p><p style="color:#aeb8c8;font-size:12px">Descarrega o ficheiro pelo catálogo e importa-o. Depois será aberto dentro do Playerun.</p></div>';
+  console.warn(err);
+ }
+}
 function closePlayer(){if(currentRomUrl&&currentRomUrl.startsWith("blob:"))URL.revokeObjectURL(currentRomUrl);currentRomUrl=null;currentGame=null;$("stage").innerHTML="";$("player").classList.remove("open");$("player").setAttribute("aria-hidden","true");document.body.style.overflow=""}
 async function onCard(id){let game=CATALOG.find(g=>g.id===id)||imported.find(g=>g.id===id);if(!game)return;launch(game)}
 $("games").addEventListener("click",e=>{const c=e.target.closest("[data-game]");if(c)onCard(c.dataset.game)});
@@ -173,7 +217,7 @@ nav.addEventListener("click",e=>{const a=e.target.closest("[data-page]");if(a){e
 $("browse").onclick=()=>goPage("store");$("addHero").onclick=()=>goPage("settings");
 function cardMarkup(g){
  const cover=g.cover?'<img loading="lazy" src="'+escapeHtml(g.cover)+'" alt="" onerror="this.remove()">':'<div class="cover-missing"><strong>'+escapeHtml(g.title)+'</strong><span>'+escapeHtml(g.platform)+'</span></div>';
- const action=g.mode==="local"?'<button class="primary" data-play-local="'+escapeHtml(g.id)+'">▶ JOGAR</button>':g.mode==="download"?'<button class="primary" data-download-game="'+escapeHtml(g.id)+'">⬇ DESCARREGAR</button>':g.mode==="play"?'<a class="primary" href="'+escapeHtml(g.url)+'" target="_blank" rel="noopener">▶ JOGAR ONLINE</a>':'<a class="secondary" href="'+escapeHtml(g.url)+'" target="_blank" rel="noopener">ABRIR PÁGINA ↗</a>';
+ const action=g.mode==="local"?'<button class="primary" data-play-local="'+escapeHtml(g.id)+'">▶ JOGAR</button>':g.mode==="download"?'<button class="primary" data-download-game="'+escapeHtml(g.id)+'">⬇ DESCARREGAR</button>':g.mode==="play"?'<button class="secondary" disabled title="Este jogo requer integração própria para execução interna">INDISPONÍVEL NO LEITOR</button>':'<button class="secondary" disabled title="Este item é uma fonte informativa, não um jogo executável">APENAS INFORMAÇÃO</button>';
  const details=[g.type,g.genre,g.version,g.sizeLabel,g.license].filter(Boolean).join(" · ");
  return '<article class="store-card"><div class="cover">'+cover+'<span class="cover-label">'+escapeHtml(g.platform)+'</span><span class="cover-title">'+escapeHtml(g.title)+'</span></div><div class="gameinfo"><h3>'+escapeHtml(g.title)+'</h3><p>'+escapeHtml(g.desc||"Jogo independente.")+'</p><div class="store-meta">'+escapeHtml(details)+'</div><div class="store-actions">'+action+'<a class="secondary" href="'+escapeHtml(g.source||g.url)+'" target="_blank" rel="noopener">FONTE ↗</a></div><div class="store-status" id="store-status-'+escapeHtml(g.id)+'"></div></div></article>';
 }
@@ -185,10 +229,10 @@ async function loadStaticCatalog(){try{const response=await fetch("./catalog/gam
 $("storeFilters").addEventListener("click",e=>{const b=e.target.closest("[data-store-filter]");if(b){storeFilter=b.dataset.storeFilter;document.querySelectorAll("[data-store-filter]").forEach(x=>x.classList.toggle("active",x===b));renderStore();}});
 async function downloadGame(g){
  const status=$("store-status-"+g.id);
- const directFallback=()=>{status.textContent="Download direto não permitido pelo servidor. Abre a fonte e guarda o ficheiro na tua pasta de jogos: ";const a=document.createElement("a");a.href=g.url;a.target="_blank";a.rel="noopener";a.textContent="ABRIR DOWNLOAD ↗";a.style.color="var(--acid)";status.append(a);};
- if(!gameDir){status.textContent="Define uma pasta em Configurações para guardar aqui, ou ";const a=document.createElement("a");a.href=g.url;a.target="_blank";a.rel="noopener";a.textContent="descarrega pela fonte";a.style.color="var(--acid)";status.append(a);return;}
+ const showError=message=>{status.textContent=message};
+ if(!gameDir){showError("Define a pasta principal de jogos em Configurações para descarregar e organizar os ficheiros.");return}
  try{
-  status.textContent="A preparar download...";
+  showError("A descarregar "+g.title+"...");
   if(!await folderPermission(true))throw new Error("Permissão de escrita recusada.");
   const response=await fetch(g.url,{mode:"cors"});if(!response.ok)throw new Error("HTTP "+response.status);
   const blob=await response.blob();
@@ -196,18 +240,24 @@ async function downloadGame(g){
    if(!window.JSZip)throw new Error("O leitor ZIP não carregou.");
    const zip=await JSZip.loadAsync(blob);let count=0;
    for(const entry of Object.values(zip.files)){
-    if(entry.dir||!/\.(bin|md|gen|gba|nes|sfc|smc|pbp|iso|chd|cso|nds)$/i.test(entry.name))continue;
-    const parts=entry.name.split("/").filter(Boolean);if(!parts.length)continue;
-    let target=gameDir;for(const part of parts.slice(0,-1))target=await target.getDirectoryHandle(part,{create:true});
-    const handle=await target.getFileHandle(parts[parts.length-1],{create:true});const writer=await handle.createWritable();await writer.write(await entry.async("blob"));await writer.close();count++;
+    if(entry.dir||!/\\.(bin|md|gen|gba|gb|gbc|nes|sfc|smc|pbp|iso|chd|cso|nds|sms|z64|n64|v64)$/i.test(entry.name))continue;
+    const ext=entry.name.split(".").pop().toLowerCase();
+    const platform=["pbp","cso"].includes(ext)?"PSP":g.platform;
+    const dir=await systemFolder(platform);
+    const fileName=entry.name.split("/").pop();
+    const handle=await dir.getFileHandle(fileName,{create:true});const writer=await handle.createWritable();await writer.write(await entry.async("blob"));await writer.close();count++;
    }
-   if(["PSP","PS1","SATURN","Mega Drive"].includes(g.platform))$("isoPlatform").value=g.platform;
-   await scanFolder();status.textContent=count+" ficheiro(s) extraído(s) para "+gameDir.name+".";
+   await scanFolder();showError(count+" ficheiro(s) extraído(s) e organizados por emulador.");
   }else{
-   if(["PSP","PS1","SATURN","Mega Drive"].includes(g.platform))$("isoPlatform").value=g.platform;
-   const handle=await gameDir.getFileHandle(g.id+"."+g.ext,{create:true});const writer=await handle.createWritable();await writer.write(blob);await writer.close();await scanFolder();status.textContent="Guardado em "+gameDir.name+".";
+   const dir=await systemFolder(g.platform);
+   const ext=g.ext||g.url.split("?")[0].split(".").pop();
+   const handle=await dir.getFileHandle(g.id+"."+ext,{create:true});const writer=await handle.createWritable();await writer.write(blob);await writer.close();
+   await scanFolder();
+   const local=imported.find(x=>x.title===g.id||x.id.startsWith("folder-")&&x.file?.name===g.id+"."+ext);
+   showError("Descarregado para "+folderForPlatform(g.platform)+". A abrir no Playerun...");
+   if(local)launch(local);
   }
- }catch(error){console.warn("Download Playerun:",error);directFallback();}
+ }catch(error){console.warn("Download Playerun:",error);showError("Não foi possível descarregar dentro do app: "+error.message+". Este servidor pode bloquear CORS. Não abriremos outro site automaticamente.");}
 }
 shell.addEventListener("click",e=>{const play=e.target.closest("[data-play-local]");if(play){const g=imported.find(x=>x.id===play.dataset.playLocal);if(g)launch(g);return}const b=e.target.closest("[data-download-game]");if(!b)return;const g=STORE.find(x=>x.id===b.dataset.downloadGame);if(g)downloadGame(g);});
 $("search").addEventListener("input",()=>{render();if(STORE.length){renderStore();if(["psp","nintendo","sega","playstation","pc"].includes(activePage))renderCategory(activePage);else {const label=Object.keys(emulatorViews).find(x=>emulatorViews[x]===activePage);if(label)renderEmulatorPage(label)}}});
