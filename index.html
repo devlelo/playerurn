@@ -59,7 +59,7 @@ const SYSTEMS=[
 {label:"MEGA DRIVE",name:"Sega Mega Drive",core:"segaMD",ext:["md","gen","bin"],icon:"🔴",hint:"SEGA"},
 {label:"MASTER SYSTEM",name:"Sega Master System",core:"segaMS",ext:["sms"],icon:"🔵",hint:"SEGA"},
 {label:"SATURN",name:"Sega Saturn",core:"segaSaturn",ext:["cue","iso","chd"],icon:"🪐",hint:"SEGA 32-BIT"},
-{label:"PS1",name:"PlayStation",core:"psx",ext:["cue","iso","chd","pbp"],icon:"◼️",hint:"SONY"},
+{label:"PS1",name:"PlayStation",core:"psx",ext:["cue","iso","chd"],icon:"◼️",hint:"SONY"},
 {label:"PSP",name:"PlayStation Portable",core:"psp",ext:["iso","cso","pbp"],icon:"🎮",hint:"SONY HANDHELD"},
 {label:"ARCADE",name:"Arcade",core:"arcade",ext:["zip"],icon:"🕹️",hint:"ARCADE"}
 ];
@@ -70,7 +70,7 @@ const CATALOG=[
 ];
 let imported=[],activeFilter="Todos",currentGame=null,currentRomUrl=null,biosUrl=null,deferred=null,db=null,gameDir=null;
 function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function platformFor(file){const ext=file.name.split(".").pop().toLowerCase();if(["nes","unf"].includes(ext))return "NES";if(["sfc","smc"].includes(ext))return "SNES";if(["gb","gbc"].includes(ext))return "GB";if(ext==="gba")return "GBA";if(["n64","z64","v64"].includes(ext))return "N64";if(ext==="nds")return "NDS";if(ext==="sms")return "MASTER SYSTEM";if(["iso","cue","chd","bin","md","gen","32x"].includes(ext))return $("isoPlatform").value;if(["pbp","cso"].includes(ext))return "PSP";return "Outro"}
+function platformFor(file){const ext=file.name.split(".").pop().toLowerCase();if(["nes","unf"].includes(ext))return "NES";if(["sfc","smc"].includes(ext))return "SNES";if(["gb","gbc"].includes(ext))return "GB";if(ext==="gba")return "GBA";if(["n64","z64","v64"].includes(ext))return "N64";if(ext==="nds")return "NDS";if(ext==="sms")return "MASTER SYSTEM";if(["md","gen","32x"].includes(ext))return "Mega Drive";if(["iso","cue","chd","bin"].includes(ext))return $("isoPlatform").value;if(["pbp","cso"].includes(ext))return "PSP";return "Outro"}
 function coreFor(platform){const normalized=platform==="Mega Drive"?"MEGA DRIVE":platform;const s=SYSTEMS.find(x=>x.label===normalized||x.name===platform);return s?s.core:"gba"}
 function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open("playerun-retro-library",2);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains("roms"))d.createObjectStore("roms",{keyPath:"id"});if(!d.objectStoreNames.contains("settings"))d.createObjectStore("settings",{keyPath:"id"})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 function dbAll(){return new Promise((resolve,reject)=>{const tx=db.transaction("roms","readonly"),r=tx.objectStore("roms").getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}
