@@ -1,12 +1,13 @@
 {
-  "name": "Playerun — Games & Retro",
+  "name": "Playerun — Retro Games",
   "short_name": "Playerun",
-  "description": "Biblioteca de jogos arcade e retro com leitor integrado.",
+  "description": "Biblioteca retro e emuladores no browser.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#080a10",
-  "theme_color": "#080a10",
+  "orientation": "any",
+  "background_color": "#090b10",
+  "theme_color": "#090b10",
   "icons": [
     {
       "src": "./icon.svg",
