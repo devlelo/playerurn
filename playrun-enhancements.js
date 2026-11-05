@@ -152,10 +152,10 @@
       <label class="pr-help">IMPORTAR ARQUIVO JSON</label><br><input id="prJsonFile" type="file" accept=".json,application/json">
       <div class="pr-actions"><button type="button" id="prImportJson" class="primary">IMPORTAR JSON</button><button type="button" id="prExportJson">EXPORTAR CATÁLOGO</button></div>
       <label class="pr-help" for="prOneGame">OU COLA UM JOGO EM JSON</label>
-      <textarea id="prOneGame" spellcheck="false" placeholder='{"id":"meu-jogo","title":"Meu jogo","platform":"PSP","url":"https://.../jogo.iso","ext":"iso","mode":"download","license":"Consultar licença","source":"https://..."}'></textarea>
+      <textarea id="prOneGame" spellcheck="false" placeholder='{"id":"gta-psp","title":"GTA: Liberty City Stories","platform":"PSP","mode":"info","source":"https://www.rockstargames.com/"}'></textarea>
       <div class="pr-actions"><button type="button" id="prAddOne" class="primary">ADICIONAR JOGO</button></div>
       <div class="pr-status" id="prManagerStatus" role="status"></div>
-      <p class="pr-help">Campos mínimos: id, title, platform e url. Usa mode «download» apenas para ficheiros que podem ser distribuídos. Para jogos comerciais sem autorização de distribuição, regista a ficha informativa e deixa o utilizador importar a sua cópia; não coloques links de ROM/ISO não autorizados.</p>
+      <p class="pr-help">Campos mínimos: id, title e platform. Para jogos jogáveis, acrescenta url. Usa mode «download» apenas para ficheiros que podem ser distribuídos; usa «info» para jogos comerciais que só queres catalogar. Para jogos comerciais sem autorização de distribuição, regista a ficha informativa e deixa o utilizador importar a sua cópia; não coloques links de ROM/ISO não autorizados.</p>
     `;
     host.append(panel);
 
@@ -170,7 +170,7 @@
       status(games.length + " jogo(s) guardado(s) na biblioteca deste dispositivo.");
     };
     const normalize = game => {
-      if (!game || typeof game !== "object" || !game.id || !game.title || !game.platform || !game.url) throw new Error("Cada jogo precisa de id, title, platform e url.");
+      if (!game || typeof game !== "object" || !game.id || !game.title || !game.platform) throw new Error("Cada jogo precisa de id, title e platform.");
       const clean = {...game};
       clean.id = String(clean.id).trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-");
       clean.title = String(clean.title).trim();
