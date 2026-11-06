@@ -235,7 +235,7 @@ for(const system of SYSTEMS){
  emulatorViews[system.label]=key;
  views[key]=makeView(key);shell.insertBefore(views[key],footer);
  const page=document.createElement("section");page.className="section";
- page.innerHTML='<div class="sectionhead"><div><h2>'+escapeHtml(system.name)+(system.label==="HTML"?' · PLAYER NATIVO':' · EMULADOR')+'</h2><p>Ficheiros compatíveis: '+escapeHtml(system.ext.map(x=>"."+x.toUpperCase()).join(", "))+(system.label==="HTML"?' · Execução HTML5 local e isolada':' · Core: '+escapeHtml(system.core))+'</p></div></div><div class="drop" style="margin-bottom:18px"><p>Esta página mostra apenas jogos identificados para '+escapeHtml(system.name)+'. Importa os teus ficheiros ou escolhe um título do catálogo compatível.</p><div class="drop-actions"><button class="primary" data-emulator-import="'+escapeHtml(system.label)+'">＋ IMPORTAR JOGOS DESTE SISTEMA</button><button class="secondary" data-emulator-scan>↻ LER PASTA DE JOGOS</button></div></div><div class="sectionhead"><div><h2>Catálogo disponível</h2></div></div><div class="grid" id="catalog-'+key+'"></div><div class="empty" id="catalog-empty-'+key+'" hidden>Não há títulos deste sistema no catálogo neste momento.</div><div class="sectionhead" style="margin-top:28px"><div><h2>A tua biblioteca</h2></div></div><div class="grid" id="local-'+key+'"></div><div class="empty" id="local-empty-'+key+'" hidden>Ainda não importaste jogos para este emulador.</div>';
+ page.innerHTML='<div class="sectionhead"><div><h2>'+escapeHtml(system.name)+(system.label==="HTML"?' · PLAYER NATIVO':' · EMULADOR')+'</h2><p>Ficheiros compatíveis: '+escapeHtml(system.ext.map(x=>"."+x.toUpperCase()).join(", "))+(system.label==="HTML"?' · Execução HTML5 local e isolada':' · Core: '+escapeHtml(system.core))+'</p></div></div><div class="drop" style="margin-bottom:18px"><p>Esta página mostra apenas jogos identificados para '+escapeHtml(system.name)+'. Importa os teus ficheiros ou escolhe um título do catálogo compatível.</p><div class="drop-actions"><button class="primary" data-emulator-import="'+escapeHtml(system.label)+'">＋ IMPORTAR JOGOS DESTE SISTEMA</button><button class="secondary" data-emulator-scan="'+escapeHtml(system.label)+'">↻ LER PASTA DESTE SISTEMA</button></div></div><div class="sectionhead"><div><h2>Catálogo disponível</h2></div></div><div class="grid" id="catalog-'+key+'"></div><div class="empty" id="catalog-empty-'+key+'" hidden>Não há títulos deste sistema no catálogo neste momento.</div><div class="sectionhead" style="margin-top:28px"><div><h2>A tua biblioteca</h2></div></div><div class="grid" id="local-'+key+'"></div><div class="empty" id="local-empty-'+key+'" hidden>Ainda não importaste jogos para este emulador.</div>';
  views[key].append(page);
  pageHashes[key]="emulador-"+slug;
 }
@@ -254,7 +254,7 @@ sys.addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(!b
 shell.addEventListener("click",e=>{
  const importBtn=e.target.closest("[data-emulator-import]");
  if(importBtn){const label=importBtn.dataset.emulatorImport;const map={"MEGA DRIVE":"Mega Drive","MASTER SYSTEM":"MASTER SYSTEM","SATURN":"SATURN","PSP":"PSP","PS1":"PS1"};if(map[label])$("isoPlatform").value=map[label];$("romFiles").click();}
- if(e.target.closest("[data-emulator-scan]"))scanFolder();
+ const scanBtn=e.target.closest("[data-emulator-scan]");if(scanBtn)scanFolder(scanBtn.dataset.emulatorScan);
 });
 
 let activePage="home";
