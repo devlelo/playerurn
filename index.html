@@ -127,6 +127,8 @@ async function launchHtmlGame(game){
  }catch(error){$("stage").textContent="Não foi possível abrir este jogo HTML: "+error.message;console.error(error)}
 }
 function launch(game){
+ if(game.platform==="PSP"&&window.PlayerunEngines){window.PlayerunEngines.open(game,"psp");return}
+ if(["Mega Drive","MASTER SYSTEM"].includes(game.platform)&&window.PlayerunEngines){window.PlayerunEngines.open(game,"sega");return}
  if(game.platform==="HTML"||game.mode==="html"||/\.html?$/i.test(game.file?.name||game.url||"")){launchHtmlGame(game);return}
  stopEmulator();currentGame=game;
  if(currentRomUrl&&currentRomUrl.startsWith("blob:"))URL.revokeObjectURL(currentRomUrl);
@@ -310,5 +312,5 @@ function formatBytes(bytes){if(!Number.isFinite(Number(bytes)))return"";const n=
 loadStaticCatalog().then(loadPspCatalog);
 
 </script>
-<script src="./playrun-enhancements.js" defer></script>
+<script src="./playrun-enhancements.js" defer></script>\n<script src="./emulators/player.js" defer></script>
 <script src="./playerun-v4.js" defer></script>\n</body></html>
