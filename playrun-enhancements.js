@@ -78,7 +78,7 @@
       <div class="pr-local-head"><div><h2>${offline ? "Os teus jogos offline" : "A tua coleção neste dispositivo"}</h2><p style="margin:5px 0 0;color:#929aaa;font-size:11px">${games.length} jogo(s) guardado(s) neste dispositivo. Estes continuam disponíveis sem internet.</p></div><span style="color:#d5ff45;font-size:10px;font-weight:900">${offline ? "MODO OFFLINE" : "BIBLIOTECA LOCAL"}</span></div>
       ${games.length ? '<div class="pr-local-grid">' + games.slice(0,12).map((game,index) => `
         <div class="pr-local-item">
-          <div class="pr-cover">${game.cover ? '<img src="'+esc(game.cover)+'" alt="">' : "ROM"}</div>
+          <div class="pr-cover">${game.cover ? '<img src="'+esc(game.cover)+'" alt="">' : "🎮"}</div>
           <div style="min-width:0"><strong>${esc(game.title || game.file?.name || "Jogo")}</strong><small>${esc(game.platform || "Jogo local")}</small></div>
           <button type="button" data-pr-local="${index}">JOGAR</button>
         </div>`).join("") + '</div>' : '<div class="empty">Ainda não tens jogos guardados neste dispositivo. Importa ROMs ou jogos HTML na secção Biblioteca.</div>'}
