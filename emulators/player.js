@@ -12,7 +12,7 @@
     try { if (typeof window.EJS_terminate === "function") window.EJS_terminate(); } catch (_) {}
   }
   function deliverFile(frame, file, selector, attempt = 0) {
-    if (!file || attempt > 24) return;
+    if (!file || attempt > 120) return;
     try {
       const doc = frame.contentDocument;
       const input = doc && doc.querySelector(selector);
