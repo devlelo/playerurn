@@ -89,19 +89,21 @@ function folderForPlatform(platform){
  return names[platform]||"Outros";
 }
 async function systemFolder(platform,create=true){return await gameDir.getDirectoryHandle(folderForPlatform(platform),{create})}
-async function scanFolder(){
+async function scanFolder(onlyPlatform){
  if(!gameDir){$("folderStatus").textContent="Escolhe primeiro a pasta principal de jogos.";return}
  if(!await folderPermission(false)){$("folderStatus").textContent="Permissão de leitura não concedida.";return}
- const files=await readFolder(gameDir),seen=new Set();
- const folderPlatform={"PlayStation Portable":"PSP","PlayStation 1":"PS1","Nintendo NES":"NES","Super Nintendo":"SNES","Game Boy":"GB","Game Boy Advance":"GBA","Nintendo 64":"N64","Nintendo DS":"NDS","Sega Mega Drive":"Mega Drive","Sega Master System":"MASTER SYSTEM","Sega Saturn":"SATURN","Arcade":"ARCADE","Jogos HTML":"HTML"};
+ const files=await readFolder(gameDir),seen=new Set(),wanted=onlyPlatform||null;
  for(const item of files){
-  const root=item.path.split("/")[0],p=folderPlatform[root]||platformFor(item.file);if(p==="Outro")continue;
+  const p=platformFromPath(item.path)||platformFor(item.file);
+  if(p==="Outro"||(wanted&&p!==wanted))continue;
   const rid="folder-"+item.path+"-"+item.file.size;seen.add(rid);
   await dbPut({id:rid,title:item.file.name.replace(/\.[^.]+$/,""),platform:p,core:coreFor(p),description:"Pasta: "+item.path,file:item.file,added:Date.now(),folder:folderForPlatform(p)});
  }
- const allRows=await dbAll();for(const row of allRows){if(String(row.id).startsWith("folder-")&&!seen.has(row.id))await dbDelete(row.id)}
+ const allRows=await dbAll();
+ for(const row of allRows){if(String(row.id).startsWith("folder-")&&(!wanted||row.platform===wanted)&&!seen.has(row.id))await dbDelete(row.id)}
  imported=await dbAll();render();
- $("folderStatus").textContent=files.length+" ficheiro(s) analisados nas pastas separadas por emulador.";
+ const count=files.filter(item=>!wanted||platformFromPath(item.path)===wanted).length;
+ $("folderStatus").textContent=(wanted?folderForPlatform(wanted)+": ":"")+count+" ficheiro(s) encontrados.";
 }
 async function chooseFolder(){if(!window.showDirectoryPicker){alert("Este navegador não suporta ligação direta de pastas. Usa Importar pasta como alternativa.");return}try{gameDir=await window.showDirectoryPicker({id:"playerun-games",mode:"readwrite"});await saveFolder(gameDir);await scanFolder()}catch(e){if(e.name!=="AbortError")alert(e.message)}}
 async function saveRomToFolder(game){if(!gameDir){alert("Define primeiro a pasta principal de jogos.");return}if(!await folderPermission(true)){alert("Permissão de escrita não concedida.");return}try{const response=await fetch(game.rom);if(!response.ok)throw Error("Download falhou: "+response.status);const blob=await response.blob();const ext=game.ext||game.rom.split(".").pop();const dir=await systemFolder(game.platform);const handle=await dir.getFileHandle(game.id+"."+ext,{create:true});const stream=await handle.createWritable();await stream.write(blob);await stream.close();await scanFolder();alert(game.title+" guardado em "+folderForPlatform(game.platform))}catch(e){alert("Não foi possível guardar o jogo: "+e.message)}}
@@ -112,7 +114,29 @@ function cover(g){if(g.cover)return '<img loading="lazy" src="'+escapeHtml(g.cov
 function card(g){return '<article class="game" data-game="'+escapeHtml(g.id)+'"><div class="cover">'+cover(g)+'<span class="cover-label">'+escapeHtml(g.platform)+'</span><span class="cover-title">'+escapeHtml(g.title)+'</span></div><div class="gameinfo"><h3>'+escapeHtml(g.title)+'</h3><p>'+escapeHtml(g.description||"ROM importada neste dispositivo")+'</p><div class="gamefoot"><span class="platform">'+escapeHtml(g.platform)+'</span><span class="playhint">▶ JOGAR</span></div></div></article>'}
 function render(){const q=$("search").value.trim().toLowerCase();let list=[...imported];if(activeFilter!=="Todos"&&activeFilter!=="Minha biblioteca")list=list.filter(g=>g.platform===activeFilter);if(q)list=list.filter(g=>(g.title+" "+g.platform+" "+(g.description||"")).toLowerCase().includes(q));$("games").innerHTML=list.map(card).join("");$("empty").hidden=!!list.length;$("gameCount").textContent=String(imported.length).padStart(2,"0");$("localCount").textContent=String(imported.length).padStart(2,"0")}
 function setFilter(f){activeFilter=f;document.querySelectorAll("[data-filter]").forEach(b=>b.classList.toggle("active",b.dataset.filter===f));render()}
-async function importFiles(files){for(const file of Array.from(files||[])){if(file.name.toLowerCase().endsWith(".zip")){if(!window.JSZip){alert("O leitor de ZIP não carregou. Verifica a internet e tenta novamente.");continue}try{const zip=await JSZip.loadAsync(file);const entries=Object.values(zip.files).filter(x=>!x.dir&&/\.(bin|gba|gb|gbc|nes|sfc|smc|md|gen|nds|iso|cue|chd|cso|pbp|sms|z64|n64|v64)$/i.test(x.name));for(const entry of entries){const path=entry.name.toLowerCase();const match=[["tank-battle","Tank Battle"],["battle-4tris","Battle 4Tris"],["snake","Snake Arena"],["space-shooter","Space Shooter"],["breakout","Breakout"],["pong","Pong"]].find(x=>path.includes(x[0]));const title=match?match[1]:entry.name.split("/").pop().replace(/\.[^.]+$/,"").replace(/[_-]+/g," ");const ext=entry.name.split(".").pop().toLowerCase();const platform=ext==="pbp"&&/psp/i.test(entry.name)?"PSP":(["md","gen"].includes(ext)||ext==="bin"&&/genesis|mega|sega/i.test(entry.name)?"Mega Drive":platformFor({name:entry.name}));const blob=await entry.async("blob");await dbPut({id:"zip-"+entry.name+"-"+blob.size,title,platform,core:coreFor(platform),description:"Homebrew importado do pack Sega",file:blob,added:Date.now()})}}catch(err){console.warn(err);alert("Não foi possível extrair este ZIP. Tenta descarregar novamente o pack.")}continue}const platform=platformFor(file);if(platform==="Outro")continue;const id="local-"+file.name+"-"+file.size;await dbPut({id,title:file.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," "),platform,core:coreFor(platform),description:"Importado da tua biblioteca local",file:file,added:Date.now()})}imported=await dbAll();render();$("localCount").textContent=String(imported.length).padStart(2,"0")}
+async function importFiles(files){
+ for(const file of Array.from(files||[])){
+  if(file.name.toLowerCase().endsWith(".zip")){
+   if(!window.JSZip){alert("O leitor de ZIP não carregou. Verifica a internet e tenta novamente.");continue}
+   try{
+    const zip=await JSZip.loadAsync(file),entries=Object.values(zip.files).filter(x=>!x.dir&&isGameFile(x.name));
+    for(const entry of entries){
+     const name=entry.name.split("/").pop(),ext=name.split(".").pop().toLowerCase();
+     let platform=platformFromPath(entry.name)||((["pbp","cso"].includes(ext)||/psp/i.test(entry.name))?"PSP":platformFor({name}));
+     if(platform==="Outro"&&/sega|genesis|mega.?drive/i.test(entry.name))platform="Mega Drive";
+     if(platform==="Outro")continue;
+     const blob=await entry.async("blob"),title=name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ");
+     await dbPut({id:"zip-"+entry.name+"-"+blob.size,title,platform,core:coreFor(platform),description:"Importado do pacote "+file.name,file:new File([blob],name),added:Date.now(),folder:folderForPlatform(platform)});
+    }
+   }catch(err){console.warn(err);alert("Não foi possível extrair este ZIP. Tenta descarregar novamente o pacote.")}
+   continue;
+  }
+  const platform=platformFor(file);if(platform==="Outro")continue;
+  const id="local-"+(file.webkitRelativePath||file.name)+"-"+file.size;
+  await dbPut({id,title:file.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," "),platform,core:coreFor(platform),description:"Importado da tua biblioteca local",file,added:Date.now(),folder:folderForPlatform(platform)});
+ }
+ imported=await dbAll();render();$("localCount").textContent=String(imported.length).padStart(2,"0");
+}
 function stopEmulator(){try{if(typeof window.EJS_terminate==="function")window.EJS_terminate()}catch(e){console.warn("EmulatorJS shutdown",e)}}
 async function launchHtmlGame(game){
  stopEmulator();currentGame=game;
