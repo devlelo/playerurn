@@ -1,5 +1,5 @@
 /* Playerun offline-first service worker — same-origin emulator runtime cache */
-const VERSION = "playerun-shell-v14";
+const VERSION = "playerun-shell-v15";
 const CORE = [
   "./",
   "./index.html",
@@ -12,6 +12,7 @@ const CORE = [
   "./emulators/engines.json",
   "./covers/battle-4tris.svg",
   "./catalog/games.json",
+  "./catalog/custom-games.json",
   "./games-html/pong.html",
   "./games-html/snake.html",
   "./games-html/breakout.html"
