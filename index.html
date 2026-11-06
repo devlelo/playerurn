@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090b10"><meta name="description" content="Playerun — jogos PSP, Nintendo, Sega, PlayStation e PC no mesmo catálogo.">
+<meta name="theme-color" content="#090b10"><meta name="description" content="Playerun: biblioteca online e local de jogos PSP, PlayStation, Sega e HTML5.">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml">
 <title>PLAYERUN — Jogos de várias gerações</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,7 +11,7 @@
 :root{--bg:#090b10;--panel:#11151e;--panel2:#171d28;--line:#ffffff14;--text:#f4f5f7;--muted:#929aaa;--acid:#d5ff45;--red:#ff5a42;--blue:#72b7ff;--r:16px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "DM Sans",sans-serif}button,input,select{font:inherit}button{cursor:pointer;color:inherit}a{color:inherit;text-decoration:none}
 .app{min-height:100vh}.top{height:76px;display:flex;align-items:center;padding:0 clamp(18px,4.5vw,72px);gap:38px;border-bottom:1px solid var(--line);background:#090b10ed;position:sticky;top:0;z-index:30;backdrop-filter:blur(20px)}
-.brand{font:900 29px/1 "Barlow Condensed";letter-spacing:1px}.brand b{color:var(--acid)}.nav{display:flex;gap:26px;color:#aeb5c2;font-size:13px;font-weight:700}.nav a.active,.nav a:hover{color:var(--acid)}.topright{margin-left:auto;display:flex;align-items:center;gap:12px}.search{display:flex;align-items:center;gap:9px;background:#151a24;border:1px solid var(--line);border-radius:8px;padding:10px 13px;width:230px}.search input{background:none;border:0;outline:0;color:white;width:100%;min-width:0}.search input::placeholder{color:#7e8797}.roundbtn{width:40px;height:40px;border:1px solid var(--line);border-radius:8px;background:#ffffff08}.accent{background:var(--acid);color:#10130a;border:0;border-radius:8px;padding:11px 16px;font-weight:900}
+.brand{display:flex;align-items:center;gap:9px;font:900 29px/1 "Barlow Condensed";letter-spacing:1px}.brand-symbol{width:38px;height:38px;flex:none}.brand b{color:var(--acid)}.nav{display:flex;gap:26px;color:#aeb5c2;font-size:13px;font-weight:700}.nav a.active,.nav a:hover{color:var(--acid)}.topright{margin-left:auto;display:flex;align-items:center;gap:12px}.search{display:flex;align-items:center;gap:9px;background:#151a24;border:1px solid var(--line);border-radius:8px;padding:10px 13px;width:230px}.search input{background:none;border:0;outline:0;color:white;width:100%;min-width:0}.search input::placeholder{color:#7e8797}.roundbtn{width:40px;height:40px;border:1px solid var(--line);border-radius:8px;background:#ffffff08}.accent{background:var(--acid);color:#10130a;border:0;border-radius:8px;padding:11px 16px;font-weight:900}
 .shell{max-width:1600px;margin:auto;padding:0 clamp(16px,4.5vw,72px) 70px}
 .hero{margin-top:28px;min-height:475px;border-radius:18px;overflow:hidden;position:relative;display:flex;align-items:flex-end;background:#171c28;isolation:isolate;border:1px solid #ffffff18}
 .hero-art{position:absolute;inset:0;z-index:-2;background:linear-gradient(90deg,#090b10 0%,#090b10f2 26%,#090b1080 58%,#090b1040 100%),linear-gradient(0deg,#090b10 0%,transparent 60%),url("https://raw.githubusercontent.com/gbadev-org/games/master/entries/apotris/cover.gif") center 42%/cover no-repeat;filter:saturate(.85)}
@@ -33,7 +33,7 @@ footer{padding:26px 0;border-top:1px solid var(--line);color:#778194;font-size:1
 <body>
 <div class="app">
 <header class="top">
-<a class="brand" href="#">PLAYER<b>UN</b></a>
+<a class="brand" href="#inicio" aria-label="Playerun início"><svg class="brand-symbol" viewBox="0 0 48 48" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="8" fill="#d8ff4f"/><path d="M12 10h15c7 0 11 4 11 10s-4 10-11 10h-5v8h-10V10zm10 8v5h5c2 0 3-1 3-3s-1-2-3-2h-5z" fill="#090b10"/></svg><span>PLAYER<b>UN</b></span></a>
 <nav class="nav"><a class="active" href="#inicio">Início</a><a href="#consolas">Consolas</a><a href="#biblioteca">Biblioteca</a><a href="#adicionar">Adicionar jogos</a></nav>
 <div class="topright"><label class="search">⌕ <input id="search" placeholder="Pesquisar jogo..." aria-label="Pesquisar jogos"></label><button class="roundbtn" id="random" title="Jogo aleatório">⤨</button><button class="accent" id="install">Instalar Playerun</button></div>
 </header>
