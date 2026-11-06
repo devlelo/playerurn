@@ -74,7 +74,7 @@ function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;",
 const FOLDER_PLATFORMS={"psp":"PSP","playstation portable":"PSP","ps":"PS1","ps1":"PS1","psx":"PS1","playstation":"PS1","playstation 1":"PS1","sega mega drive":"Mega Drive","mega drive":"Mega Drive","genesis":"Mega Drive","sega genesis":"Mega Drive","sega master system":"MASTER SYSTEM","master system":"MASTER SYSTEM","sms":"MASTER SYSTEM","game gear":"Game Gear","sg-1000":"SG-1000","jogos html":"HTML","html":"HTML"};
 function platformFromPath(path){const parts=String(path||"").split(/[\\/]+/).filter(Boolean);for(let i=parts.length-2;i>=0;i--){const p=FOLDER_PLATFORMS[parts[i].toLowerCase()];if(p)return p;}return null}
 function platformFor(file){const path=file.webkitRelativePath||file.name;const byFolder=platformFromPath(path);if(byFolder)return byFolder;const ext=file.name.split(".").pop().toLowerCase();if(["html","htm"].includes(ext))return "HTML";if(["nes","unf"].includes(ext))return "NES";if(["sfc","smc"].includes(ext))return "SNES";if(["gb","gbc"].includes(ext))return "GB";if(ext==="gba")return "GBA";if(["n64","z64","v64"].includes(ext))return "N64";if(ext==="nds")return "NDS";if(ext==="sms")return "MASTER SYSTEM";if(ext==="gg")return "Game Gear";if(ext==="sg")return "SG-1000";if(["md","gen","smd","32x"].includes(ext))return "Mega Drive";if(["pbp","cso"].includes(ext))return "PSP";if(["iso","cue","chd","bin"].includes(ext))return $("isoPlatform").value||"Outro";return "Outro"}
-function coreFor(platform){if(platform==="HTML")return "html";const normalized=platform==="Mega Drive"?"MEGA DRIVE":platform;const s=SYSTEMS.find(x=>x.label===normalized||x.name===platform);return s?s.core:"gba"}
+function coreFor(platform){if(platform==="HTML")return "html";if(platform==="Game Gear")return "segaGG";if(platform==="SG-1000")return "segaMS";const normalized=platform==="Mega Drive"?"MEGA DRIVE":platform;const s=SYSTEMS.find(x=>x.label===normalized||x.name===platform);return s?s.core:"gba"}
 function openDb(){return new Promise((resolve,reject)=>{const req=indexedDB.open("playerun-retro-library",2);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains("roms"))d.createObjectStore("roms",{keyPath:"id"});if(!d.objectStoreNames.contains("settings"))d.createObjectStore("settings",{keyPath:"id"})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 function dbAll(){return new Promise((resolve,reject)=>{const tx=db.transaction("roms","readonly"),r=tx.objectStore("roms").getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}
 function dbPut(item){return new Promise((resolve,reject)=>{const tx=db.transaction("roms","readwrite");tx.objectStore("roms").put(item);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
@@ -239,8 +239,8 @@ for(const system of SYSTEMS){
  views[key].append(page);
  pageHashes[key]="emulador-"+slug;
 }
-nav.innerHTML='<a href="#inicio" data-page="home">Início</a><a href="#descobrir" data-page="store">Biblioteca online</a><a href="#emulador-psp" data-page="emu-psp">PSP</a><a href="#emulador-ps1" data-page="emu-ps1">PlayStation</a><a href="#emulador-mega-drive" data-page="emu-mega-drive">SEGA</a><a href="#emulador-html" data-page="emu-html">HTML5</a><a href="#biblioteca" data-page="collection">Os meus jogos</a><a href="#adicionar" data-page="settings">Pastas</a>';
-function canonicalPlatform(label){return label==="MEGA DRIVE"?"Mega Drive":label==="SATURN"?"SATURN":label;}
+nav.innerHTML='<a href="#inicio" data-page="home">Início</a><a href="#descobrir" data-page="store">Biblioteca online</a><a href="#emulador-psp" data-page="emu-psp">PSP</a><a href="#emulador-ps1" data-page="emu-ps1">PlayStation</a><a href="#emulador-mega-drive" data-page="emu-mega-drive">SEGA</a><a href="#emulador-master-system" data-page="emu-master-system">SMS</a><a href="#emulador-html" data-page="emu-html">HTML5</a><a href="#biblioteca" data-page="collection">Os meus jogos</a><a href="#adicionar" data-page="settings">Pastas</a>';
+function canonicalPlatform(label){const map={"MEGA DRIVE":"Mega Drive","GAME GEAR":"Game Gear","MASTER SYSTEM":"MASTER SYSTEM","SG-1000":"SG-1000","SATURN":"SATURN","PS1":"PS1","PSP":"PSP","HTML":"HTML"};return map[label]||label;}
 function renderEmulatorPage(label){
  const key=emulatorViews[label],platform=canonicalPlatform(label);
  const catalog=STORE.filter(g=>(g.mode==="download"||g.mode==="html"||g.mode==="info")&&g.platform===platform);
@@ -253,7 +253,7 @@ function renderEmulatorPage(label){
 sys.addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(!b)return;const label=b.dataset.system;const target=emulatorViews[label]||emulatorViews[label.toUpperCase()];if(target)goPage(target);});
 shell.addEventListener("click",e=>{
  const importBtn=e.target.closest("[data-emulator-import]");
- if(importBtn){const label=importBtn.dataset.emulatorImport;const map={"MEGA DRIVE":"Mega Drive","MASTER SYSTEM":"MASTER SYSTEM","SATURN":"SATURN","PSP":"PSP","PS1":"PS1"};if(map[label])$("isoPlatform").value=map[label];$("romFiles").click();}
+ if(importBtn){const label=importBtn.dataset.emulatorImport;const map={"MEGA DRIVE":"Mega Drive","MASTER SYSTEM":"MASTER SYSTEM","GAME GEAR":"Game Gear","SG-1000":"SG-1000","SATURN":"SATURN","PSP":"PSP","PS1":"PS1"};if(map[label])$("isoPlatform").value=map[label];$("romFiles").click();}
  const scanBtn=e.target.closest("[data-emulator-scan]");if(scanBtn)scanFolder(scanBtn.dataset.emulatorScan);
 });
 
