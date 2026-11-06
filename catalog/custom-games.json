@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "notice": "Ficheiro extra editável do Playerun. Adiciona jogos em games. url tem de ser o endereço DIRETO do ficheiro, não uma página web. source é a página oficial do projeto. featured:true coloca o jogo no filtro MELHORES da consola indicada.",
+  "platforms": [
+    "PSP",
+    "PS1",
+    "Mega Drive",
+    "MASTER SYSTEM",
+    "HTML"
+  ],
+  "example": {
+    "id": "meu-jogo-psp",
+    "title": "Nome do jogo",
+    "platform": "PSP",
+    "url": "https://exemplo.org/download/jogo.zip",
+    "ext": "zip",
+    "cover": "https://exemplo.org/capa.jpg",
+    "desc": "Descrição curta",
+    "genre": "Ação",
+    "license": "Licença do autor",
+    "source": "https://exemplo.org/pagina-do-projeto",
+    "type": "HOMEBREW PSP",
+    "mode": "download",
+    "featured": true
+  },
+  "games": []
+}
