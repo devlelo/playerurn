@@ -66,7 +66,7 @@
     const host=$("playerunHome");if(!host)return;
     const games=local(),psp=games.filter(g=>kind(g)==="PSP"),ps1=games.filter(g=>kind(g)==="PS1"),sega=games.filter(g=>kind(g)==="SEGA"),html=games.filter(g=>kind(g)==="HTML");
     for(const [id,list] of [["pu-psp",psp],["pu-ps1",ps1],["pu-sega",sega],["pu-html",html]]){const node=$(id);if(node)node.innerHTML=list.length?list.map(gameCard).join(""):'<div class="pu-empty">Ainda não há jogos nesta coleção.</div>';}
-    const cats=[["pu-discover-psp",["PSP"]],["pu-discover-sega",["Mega Drive","MASTER SYSTEM","Game Gear","SG-1000"]],["pu-discover-html",["HTML","PC / Browser","PC"]]];
+    const cats=[["pu-discover-psp",["PSP"]],["pu-discover-ps1",["PS1"]],["pu-discover-sega",["Mega Drive","MASTER SYSTEM","Game Gear","SG-1000"]],["pu-discover-html",["HTML","PC / Browser","PC"]]];
     for(const [id,platforms] of cats){const node=$(id);if(node){let list=[];try{list=STORE.filter(g=>platforms.includes(String(g.platform||""))&&(g.mode==="download"||g.mode==="html"||g.mode==="info"))}catch{}node.innerHTML=list.length?list.slice(0,12).map(catalogCard).join(""):'<div class="pu-empty">A coleção será apresentada aqui.</div>';}}
   }
   function render(){
@@ -82,9 +82,11 @@
       '</div>'+
       rail("CONTINUAR A JOGAR","A tua biblioteca local","pu-continue",games.slice(0,10))+
       rail("PLAYSTATION PORTABLE","A tua coleção PSP","pu-psp",psp)+
+      rail("PLAYSTATION","A tua coleção PS1","pu-ps1",ps1)+
       rail("SEGA CLASSICS","Mega Drive e Master System","pu-sega",sega)+
       rail("JOGOS DE NAVEGADOR","HTML5 sem instalação","pu-html",html)+
       catalogRail("DESCOBRIR PSP","Homebrew, demos e jogos independentes","pu-discover-psp",["PSP"])+
+      catalogRail("DESCOBRIR PLAYSTATION","Demos e homebrew PS1","pu-discover-ps1",["PS1"])+
       catalogRail("DESCOBRIR SEGA","Clássicos e jogos independentes","pu-discover-sega",["Mega Drive","MASTER SYSTEM"])+
       catalogRail("JOGOS PARA O BROWSER","Experiências HTML5","pu-discover-html",["HTML","PC / Browser","PC"])+
       '<div class="pu-actions"><button class="pu-primary" id="pu-my-games">VER OS MEUS JOGOS</button><button class="pu-secondary" id="pu-import">IMPORTAR JOGOS</button><button class="pu-secondary" id="pu-explore">EXPLORAR CATÁLOGO</button></div>';
