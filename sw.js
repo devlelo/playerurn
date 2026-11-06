@@ -1,5 +1,5 @@
 /* Playerun PWA service worker — resilient offline shell */
-const VERSION = "playerun-shell-v7";
+const VERSION = "playerun-shell-v8";
 const CORE = [
   "./",
   "./index.html",
