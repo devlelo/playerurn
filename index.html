@@ -70,7 +70,6 @@ const CATALOG=[
 {id:"battle4tris",title:"Battle 4Tris",platform:"Mega Drive",core:"segaMD",ext:"bin",rom:"https://github.com/monteslu/retro-homebrew-games/releases/download/build-9/battle-4tris.bin",cover:"./covers/battle-4tris.svg",description:"Duelo de blocos para Sega Mega Drive. Homebrew original, distribuído sob MIT.",license:"MIT",developer:"Luis Montes",source:"https://github.com/monteslu/retro-homebrew-games"}
 ];
 let imported=[],activeFilter="Todos",currentGame=null,currentRomUrl=null,biosUrl=null,deferred=null,db=null,gameDir=null;
-let pendingStoreDownload=null;
 function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 const FOLDER_PLATFORMS={"nintendo nes":"NES","super nintendo":"SNES","game boy":"GB","game boy advance":"GBA","nintendo 64":"N64","nintendo ds":"NDS","sega saturn":"SATURN","sega game gear":"Game Gear","sega sg-1000":"SG-1000","arcade":"ARCADE","html5":"HTML","psp":"PSP","playstation portable":"PSP","ps":"PS1","ps1":"PS1","psx":"PS1","playstation":"PS1","playstation 1":"PS1","sega mega drive":"Mega Drive","mega drive":"Mega Drive","genesis":"Mega Drive","sega genesis":"Mega Drive","sega master system":"MASTER SYSTEM","master system":"MASTER SYSTEM","sms":"MASTER SYSTEM","game gear":"Game Gear","sg-1000":"SG-1000","jogos html":"HTML","html":"HTML"};
 function platformFromPath(path){const parts=String(path||"").split(/[\\/]+/).filter(Boolean);for(let i=parts.length-2;i>=0;i--){const p=FOLDER_PLATFORMS[parts[i].toLowerCase()];if(p)return p;}return null}
@@ -193,7 +192,7 @@ async function onCard(id){let game=CATALOG.find(g=>g.id===id)||imported.find(g=>
 $("games").addEventListener("click",e=>{const c=e.target.closest("[data-game]");if(c)onCard(c.dataset.game)});
 $("filters").addEventListener("click",e=>{const b=e.target.closest("[data-filter]");if(b)setFilter(b.dataset.filter)});
 $("systems").addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(b){const f=b.dataset.system;setFilter(f==="GBA"||f==="Mega Drive"?f:"Todos");document.querySelectorAll(".system").forEach(x=>x.classList.toggle("active",x===b));$("biblioteca").scrollIntoView({behavior:"smooth"})}});
-$("search").addEventListener("input",render);$("browse").onclick=()=>$("biblioteca").scrollIntoView({behavior:"smooth"});$("addHero").onclick=()=>$("adicionar").scrollIntoView({behavior:"smooth"});$("chooseGameDir").onclick=chooseFolder;$("scanGameDir").onclick=scanFolder;$("pickRoms").onclick=()=>$("romFiles").click();$("pickFolder").onclick=()=>$("folderFiles").click();$("romFiles").onchange=async e=>{const files=e.target.files;if(pendingStoreDownload&&files&&files.length===1){await importPendingStoreFile(files[0]);e.target.value="";return}await importFiles(files);e.target.value="";};$("folderFiles").onchange=e=>importFiles(e.target.files);$("quickRom").onchange=async e=>{if(e.target.files[0]){await importFiles(e.target.files);const file=e.target.files[0],platform=platformFor(file);launch({id:"quick-"+file.name,title:file.name.replace(/\.[^.]+$/,""),platform,core:coreFor(platform),file,description:"ROM aberta diretamente no leitor"})}};
+$("search").addEventListener("input",render);$("browse").onclick=()=>$("biblioteca").scrollIntoView({behavior:"smooth"});$("addHero").onclick=()=>$("adicionar").scrollIntoView({behavior:"smooth"});$("chooseGameDir").onclick=chooseFolder;$("scanGameDir").onclick=scanFolder;$("pickRoms").onclick=()=>$("romFiles").click();$("pickFolder").onclick=()=>$("folderFiles").click();$("romFiles").onchange=e=>importFiles(e.target.files);$("folderFiles").onchange=e=>importFiles(e.target.files);$("quickRom").onchange=async e=>{if(e.target.files[0]){await importFiles(e.target.files);const file=e.target.files[0],platform=platformFor(file);launch({id:"quick-"+file.name,title:file.name.replace(/\.[^.]+$/,""),platform,core:coreFor(platform),file,description:"ROM aberta diretamente no leitor"})}};
 $("loadBios").onclick=()=>$("biosFile").click();$("biosFile").onchange=e=>{const file=e.target.files[0];if(!file)return;if(biosUrl&&biosUrl.startsWith("blob:"))URL.revokeObjectURL(biosUrl);biosUrl=URL.createObjectURL(file);$("playerNotice").textContent="BIOS carregada nesta sessão. O ficheiro não é enviado para um servidor."};$("close").onclick=closePlayer;$("full").onclick=()=>{const f=$("stage").querySelector("iframe");if(f?.requestFullscreen)f.requestFullscreen();else $("stage").requestFullscreen?.()};$("relaunch").onclick=()=>{if(currentGame)launch(currentGame)};
 $("random").onclick=()=>{const g=CATALOG[Math.floor(Math.random()*CATALOG.length)];launch(g)};
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e});$("install").onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null}else alert("No menu do navegador, escolhe Instalar aplicação ou Adicionar ao ecrã inicial.")};
@@ -258,7 +257,7 @@ function renderEmulatorPage(label){
 sys.addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(!b)return;const label=b.dataset.system;const target=emulatorViews[label]||emulatorViews[label.toUpperCase()];if(target)goPage(target);});
 shell.addEventListener("click",e=>{
  const downloadBtn=e.target.closest("[data-store-download]");
- if(downloadBtn){e.preventDefault();downloadStoreGame(downloadBtn.dataset.storeDownload,downloadBtn);return;}\n const confirmDownload=e.target.closest("[data-confirm-store-download]");if(confirmDownload){e.preventDefault();$("romFiles").click();return;}
+ if(downloadBtn){e.preventDefault();downloadStoreGame(downloadBtn.dataset.storeDownload,downloadBtn);return;}
  const libraryOpen=e.target.closest("[data-library-open]");if(libraryOpen){goPage(libraryOpen.dataset.libraryOpen);return;}
  const explore=e.target.closest("[data-explore-system]");
  if(explore){storeFilter=explore.dataset.exploreSystem;goPage("store");return;}
@@ -297,35 +296,42 @@ async function uniqueRomHandle(dir,baseName){
   catch(error){if(error.name==="NotFoundError")return dir.getFileHandle(name,{create:true});throw error}
  }
 }
-function downloadStoreGame(id,button){
+async function downloadStoreGame(id,button){
  const game=STORE.find(item=>item.id===id);
  if(!game||game.mode!=="download"||!game.url)return;
- pendingStoreDownload=game;
  const status=$("store-status-"+id);
- const link=document.createElement("a");
- link.href=game.url;
- link.target="_blank";
- link.rel="noopener";
- link.click();
- button.textContent="DOWNLOAD INICIADO";
- button.disabled=false;
- if(status)status.innerHTML='O download foi aberto no navegador. Quando terminar, clica em <button type="button" class="secondary" data-confirm-store-download="'+escapeHtml(game.id)+'">JÁ DESCARREGUEI — ATIVAR JOGO</button>. Depois o Playerun adiciona o ficheiro à tua biblioteca para poderes jogar.';
-}
-async function importPendingStoreFile(file){
- const game=pendingStoreDownload;
- if(!game||!file)return;
- const platform=canonicalPlatform(game.platform);
- const id="store-"+game.id+"-"+file.name+"-"+file.size;
- await dbPut({id,title:game.title,platform,core:coreFor(platform),description:"Descarregado do catálogo Playerun",file,added:Date.now(),folder:folderForPlatform(platform)});
- imported=await dbAll();
- render();
- $("localCount").textContent=String(imported.length).padStart(2,"0");
- const status=$("store-status-"+game.id);
- const button=document.querySelector('[data-store-download="'+CSS.escape(game.id)+'"]');
- if(status)status.textContent="✓ JOGO DESCARREGADO E ADICIONADO À BIBLIOTECA. Já podes jogar na biblioteca "+folderForPlatform(platform)+".";
- if(button){button.textContent="DESCARREGADO ✓";button.disabled=true;}
- pendingStoreDownload=null;
- alert(game.title+" foi adicionado à tua biblioteca. Já podes jogar no Playerun.");
+ const original=button.textContent;
+ button.disabled=true;button.textContent="A PREPARAR…";
+ try{
+  if(!gameDir){if(status)status.textContent="Escolhe a pasta principal para organizar os jogos.";await chooseFolder();if(!gameDir)throw new Error("Pasta não selecionada.")}
+  if(!await folderPermission(true))throw new Error("Permissão de escrita não concedida.");
+  const platform=canonicalPlatform(game.platform);
+  const folder=folderForPlatform(platform);
+  if(status)status.textContent="A transferir "+game.title+"…";
+  button.textContent="A TRANSFERIR…";
+  const response=await fetch(game.url,{method:"GET",mode:"cors"});
+  if(!response.ok)throw new Error("O servidor respondeu HTTP "+response.status+".");
+  const blob=await response.blob();
+  if(!blob.size)throw new Error("O servidor devolveu um ficheiro vazio.");
+  const dir=await systemFolder(platform,true);
+  const ext=safeRomExtension(game);
+  const cleanTitle=String(game.title||game.id).replace(/[/:*?"<>|]/g,"").split("\\").join("").trim().slice(0,100);
+  const handle=await uniqueRomHandle(dir,(cleanTitle||game.id)+"."+ext);
+  const writable=await handle.createWritable();
+  try{await writable.write(blob);await writable.close()}catch(error){try{await writable.abort()}catch(_){}throw error}
+  await scanFolder(platform);
+  if(status)status.textContent="Guardado em "+folder+"/"+handle.name+" · "+(blob.size/1048576).toFixed(1)+" MB";
+  button.textContent="GUARDADO";
+ }catch(error){
+  const message=error?.message||"Erro desconhecido.";
+  const likelyCors=error instanceof TypeError||/fetch|network|cors/i.test(message);
+  const fallback=likelyCors?'<br><a href="'+escapeHtml(game.url)+'" target="_blank" rel="noopener">ABRIR DOWNLOAD ORIGINAL</a> · este método não organiza automaticamente a pasta.':"";
+  if(status)status.innerHTML="Não foi possível guardar automaticamente: "+escapeHtml(message)+fallback;
+  button.textContent=original;
+ }finally{
+  button.disabled=false;
+  if(button.textContent==="A TRANSFERIR…"||button.textContent==="A PREPARAR…")button.textContent=original;
+ }
 }
 function renderStore(){const q=$("search").value.toLowerCase().trim();const allowed=SYSTEMS.map(system=>canonicalPlatform(system.label));const eligible=STORE.filter(g=>allowed.includes(g.platform)&&["download","html","play"].includes(g.mode));const platforms=SYSTEMS.map(system=>canonicalPlatform(system.label)).filter((p,i,a)=>a.indexOf(p)===i&&eligible.some(g=>g.platform===p));const labels={"PS1":"PlayStation","MASTER SYSTEM":"Master System","SATURN":"Saturn","GB":"Game Boy","NDS":"Nintendo DS","HTML":"HTML5","ARCADE":"Arcade"};$("storeFilters").innerHTML='<button class="filter" data-store-filter="Todos">Todos ('+eligible.length+')</button>'+platforms.map(p=>'<button class="filter" data-store-filter="'+escapeHtml(p)+'">'+escapeHtml(labels[p]||p)+' ('+eligible.filter(g=>g.platform===p).length+')</button>').join("");const list=STORE.filter(g=>["download","html","info","play"].includes(g.mode)&&allowed.includes(g.platform)&&(storeFilter==="Todos"||g.platform===storeFilter)&&(!q||(g.title+" "+g.platform+" "+g.desc+" "+(g.genre||"")).toLowerCase().includes(q)));renderGrid("storeGames",list);$("storeEmpty").hidden=!!list.length;document.querySelectorAll("[data-store-filter]").forEach(b=>b.classList.toggle("active",b.dataset.storeFilter===storeFilter));updateCatalogStatus();}
 function renderCategory(key){const q=$("search").value.toLowerCase().trim();const predicates={psp:g=>g.platform==="PSP",nintendo:g=>["GBA","NES","SNES","GB","NDS"].includes(g.platform),sega:g=>["Mega Drive","MASTER SYSTEM"].includes(g.platform),playstation:g=>g.platform==="PS1",pc:g=>["PC","PC / Browser","HTML"].includes(g.platform)};const list=STORE.filter(g=>(g.mode==="download"||g.mode==="html"||g.mode==="info")&&predicates[key](g)).filter(g=>!q||(g.title+" "+g.platform+" "+g.desc+" "+(g.genre||"")).toLowerCase().includes(q));renderGrid("grid-"+key,list);$("empty-"+key).hidden=!!list.length;const status=$("status-"+key);if(status)status.textContent=list.length+" títulos nesta secção. Os catálogos externos são atualizados a partir das fontes dos autores.";}
