@@ -56,14 +56,14 @@
       .pr-local-item strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .pr-local-item small{display:block;color:#929aaa;font-size:9px;margin-top:3px}
       .pr-local-item button{margin-left:auto;flex:none;border:0;border-radius:5px;padding:7px 9px;background:#d5ff45;color:#111;font-size:10px;font-weight:900}
-      .pr-manager{margin-top:20px;padding:20px;border:1px solid #ffffff20;border-radius:12px;background:#11151e}
-      .pr-manager h3{font:800 24px "Barlow Condensed";margin:0 0 5px;text-transform:uppercase}.pr-manager p,.pr-manager .pr-help{font-size:11px;color:#aab3c0;line-height:1.55}
-      .pr-manager textarea{width:100%;min-height:125px;resize:vertical;background:#090d14;color:#e9edf4;border:1px solid #ffffff25;border-radius:8px;padding:12px;font:12px/1.5 ui-monospace,monospace}
-      .pr-manager input[type=file]{max-width:100%;font-size:11px;color:#aab3c0}
-      .pr-manager .pr-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-      .pr-manager button{border:1px solid #ffffff25;border-radius:7px;background:#ffffff0d;padding:10px 13px;color:#f4f5f7;font-size:11px;font-weight:800}
-      .pr-manager button.primary{background:#d5ff45;color:#111;border-color:#d5ff45}
-      .pr-status{font-size:11px;color:#d5ff45;min-height:18px;margin-top:8px}
+      
+      
+      
+      
+      
+      
+      
+      
       @media(max-width:700px){.pr-local-grid{grid-template-columns:1fr 1fr}.pr-connect .pr-actions{margin-left:0;width:100%}.pr-local-item{padding:7px;gap:7px}.pr-local-item .pr-cover{width:36px;height:48px}.pr-local-item button{padding:6px}}
     `;
     document.head.append(style);
@@ -139,72 +139,6 @@
     }, {once:true});
   }
 
-  function addManager() {
-    const host = $("adicionar");
-    if (!host || $("playerunManager")) return;
-    const panel = document.createElement("div");
-    panel.id = "playerunManager";
-    panel.className = "pr-manager";
-    panel.innerHTML = `
-      <div class="kicker">PLAYRUN MANAGER</div>
-      <h3>Gestor de catálogo</h3>
-      <p>Adiciona jogos por um registo JSON ou importa um arquivo <code>games.json</code>. Os registos ficam guardados neste dispositivo. Exporta o catálogo para substituir <code>catalog/games.json</code> no GitHub quando quiseres publicar para todos.</p>
-      <label class="pr-help">IMPORTAR ARQUIVO JSON</label><br><input id="prJsonFile" type="file" accept=".json,application/json">
-      <div class="pr-actions"><button type="button" id="prImportJson" class="primary">IMPORTAR JSON</button><button type="button" id="prExportJson">EXPORTAR CATÁLOGO</button></div>
-      <label class="pr-help" for="prOneGame">OU COLA UM JOGO EM JSON</label>
-      <textarea id="prOneGame" spellcheck="false" placeholder='{"id":"gta-psp","title":"GTA: Liberty City Stories","platform":"PSP","mode":"info","source":"https://www.rockstargames.com/"}'></textarea>
-      <div class="pr-actions"><button type="button" id="prAddOne" class="primary">ADICIONAR JOGO</button></div>
-      <div class="pr-status" id="prManagerStatus" role="status"></div>
-      <p class="pr-help">Campos mínimos: id, title e platform. Para jogos jogáveis, acrescenta url. Usa mode «download» apenas para ficheiros que podem ser distribuídos; usa «info» para jogos comerciais que só queres catalogar. Para jogos comerciais sem autorização de distribuição, regista a ficha informativa e deixa o utilizador importar a sua cópia; não coloques links de ROM/ISO não autorizados.</p>
-    `;
-    host.append(panel);
-
-    const status = message => { $("prManagerStatus").textContent = message; };
-    const save = games => {
-      const current = getCustom();
-      const map = new Map(current.map(game => [game.id, game]));
-      games.forEach(game => map.set(game.id, game));
-      localStorage.setItem(CUSTOM_KEY, JSON.stringify([...map.values()]));
-      mergeCustomCatalog();
-      refreshCatalogViews();
-      status(games.length + " jogo(s) guardado(s) na biblioteca deste dispositivo.");
-    };
-    const normalize = game => {
-      if (!game || typeof game !== "object" || !game.id || !game.title || !game.platform) throw new Error("Cada jogo precisa de id, title e platform.");
-      const clean = {...game};
-      clean.id = String(clean.id).trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-");
-      clean.title = String(clean.title).trim();
-      clean.platform = String(clean.platform).trim();
-      clean.mode = clean.mode || "download";
-      if (!["download","html","info"].includes(clean.mode)) throw new Error("mode deve ser download, html ou info.");
-      if (clean.mode !== "info" && !clean.url) throw new Error("Jogos para download ou HTML precisam de url.");
-      clean.url = clean.url || clean.source || "#";
-      clean.ext = clean.ext || String(clean.url).split("?")[0].split(".").pop().toLowerCase();
-      return clean;
-    };
-    $("prAddOne").addEventListener("click", () => {
-      try { const game = normalize(JSON.parse($("prOneGame").value)); save([game]); $("prOneGame").value = ""; }
-      catch (error) { status("Erro: " + error.message); }
-    });
-    $("prImportJson").addEventListener("click", async () => {
-      try {
-        const file = $("prJsonFile").files[0];
-        if (!file) throw new Error("Escolhe primeiro um arquivo JSON.");
-        const data = JSON.parse(await file.text());
-        const rows = Array.isArray(data) ? data : data.games;
-        if (!Array.isArray(rows) || !rows.length) throw new Error("O arquivo precisa conter um array games.");
-        save(rows.map(normalize));
-      } catch (error) { status("Erro: " + error.message); }
-    });
-    $("prExportJson").addEventListener("click", () => {
-      const games = typeof STORE !== "undefined" && Array.isArray(STORE) ? STORE : getCustom();
-      const blob = new Blob([JSON.stringify({version:1,updated:new Date().toISOString().slice(0,10),notice:"Catálogo Playerun. Respeitar licenças e direitos de distribuição de cada jogo.",games},null,2)],{type:"application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");a.href=url;a.download="games.json";a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),1500);
-      status("Catálogo exportado. Coloca o ficheiro em catalog/games.json no GitHub para publicar.");
-    });
-  }
 
   function boot() {
     ensureStyles();
@@ -224,7 +158,6 @@
       if (stats) stats.insertAdjacentElement("afterend", local);
       else home.append(local);
     }
-    addManager();
     mergeCustomCatalog();
     renderConnection();
     renderLocalHome();
