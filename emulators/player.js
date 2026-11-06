@@ -4,8 +4,8 @@
   "use strict";
   const $ = id => document.getElementById(id);
   const routes = {
-    psp: { title: "PPSSPP · PlayStation Portable", url: "/engines/psp/", input: "#libraryImportFile", note: "Motor independente PPSSPP WebAssembly. O primeiro carregamento exige internet; depois os recursos podem ficar em cache para uso offline." },
-    sega: { title: "SANDOPOLIS · SEGA", url: "/engines/sega/", input: "#rom-input", note: "Motor Sega independente Sandopolis. Compatibilidade em desenvolvimento; usa a tua ROM local." }
+    psp: { title: "PPSSPP · PlayStation Portable", url: "/engines/psp/index.html", input: "#libraryImportFile", note: "Motor independente PPSSPP WebAssembly. O primeiro carregamento exige internet; depois os recursos podem ficar em cache para uso offline." },
+    sega: { title: "SANDOPOLIS · SEGA", url: "/engines/sega/index.html", input: "#rom-input", note: "Motor Sega independente Sandopolis. Compatibilidade em desenvolvimento; usa a tua ROM local." }
   };
   let active = null;
   function stopOldRuntime() {
