@@ -239,6 +239,7 @@ for(const system of SYSTEMS){
  views[key].append(page);
  pageHashes[key]="emulador-"+slug;
 }
+nav.innerHTML='<a href="#inicio" data-page="home">Início</a><a href="#descobrir" data-page="store">Biblioteca online</a><a href="#emulador-psp" data-page="emu-psp">PSP</a><a href="#emulador-ps1" data-page="emu-ps1">PlayStation</a><a href="#emulador-mega-drive" data-page="emu-mega-drive">SEGA</a><a href="#emulador-html" data-page="emu-html">HTML5</a><a href="#biblioteca" data-page="collection">Os meus jogos</a><a href="#adicionar" data-page="settings">Pastas</a>';
 function canonicalPlatform(label){return label==="MEGA DRIVE"?"Mega Drive":label==="SATURN"?"SATURN":label;}
 function renderEmulatorPage(label){
  const key=emulatorViews[label],platform=canonicalPlatform(label);
