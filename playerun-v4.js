@@ -42,6 +42,7 @@
   const kind = game => {
     const p=String(game.platform||"").toLowerCase();
     if(p==="psp")return "PSP";
+    if(p==="ps1"||p==="playstation"||p==="playstation 1")return "PS1";
     if(p.includes("mega")||p.includes("sega")||p==="master system"||p==="sms"||p==="game gear"||p==="sg-1000")return "SEGA";
     if(p==="html"||game.mode==="html"||/\.html?$/i.test(game.file?.name||game.url||""))return "HTML";
     return "";
@@ -74,9 +75,10 @@
     const games=local(),psp=games.filter(g=>kind(g)==="PSP"),sega=games.filter(g=>kind(g)==="SEGA"),html=games.filter(g=>kind(g)==="HTML");
     host.innerHTML=
       '<div class="pu-platforms">'+
-      '<button class="pu-platform" data-platform="PSP"><small>01 · SONY</small><strong>PLAYSTATION PORTABLE</strong><span>Motor dedicado PPSSPP WebAssembly</span></button>'+
-      '<button class="pu-platform" data-platform="SEGA"><small>02 · SEGA</small><strong>MEGA DRIVE</strong><span>Motor dedicado Sandopolis</span></button>'+
-      '<button class="pu-platform" data-platform="HTML"><small>03 · BROWSER</small><strong>JOGOS HTML5</strong><span>Executados localmente dentro do Playerun</span></button>'+
+      '<button class="pu-platform" data-platform="PSP"><small>01 · SONY</small><strong>PSP</strong><span>Emulador dedicado PPSSPP</span></button>'+
+      '<button class="pu-platform" data-platform="PS1"><small>02 · SONY</small><strong>PLAYSTATION</strong><span>Emulador PlayStation integrado</span></button>'+
+      '<button class="pu-platform" data-platform="SEGA"><small>03 · SEGA</small><strong>SEGA CLASSICS</strong><span>Mega Drive e Master System</span></button>'+
+      '<button class="pu-platform" data-platform="HTML"><small>04 · BROWSER</small><strong>JOGOS HTML5</strong><span>Executados dentro do Playerun</span></button>'+
       '</div>'+
       rail("CONTINUAR A JOGAR","A tua biblioteca local","pu-continue",games.slice(0,10))+
       rail("PLAYSTATION PORTABLE","A tua coleção PSP","pu-psp",psp)+
@@ -90,7 +92,7 @@
     const kicker=hero.querySelector(".kicker"),heading=hero.querySelector("h1"),copy=hero.querySelector(".hero-copy>p");
     if(kicker)kicker.textContent="PLAYERUN · PSP / SEGA / BROWSER";
     if(heading)heading.innerHTML="Três mundos.<br>Um só Playerun.";
-    if(copy)copy.textContent="A tua biblioteca de jogos, com emuladores dedicados para PSP e Sega e jogos HTML5 executados aqui mesmo. Guarda os teus jogos e joga sem depender de outros sites.";
+    if(copy)copy.textContent="A tua biblioteca online e local, com páginas próprias para PSP, PlayStation, Sega e jogos HTML5. Cada sistema reconhece a sua pasta e abre os jogos dentro do Playerun.";
     $("browse")?.replaceWith(Object.assign(document.createElement("button"),{id:"browse",className:"primary",textContent:"EXPLORAR JOGOS →"}));
     $("browse").onclick=()=>goPage("store");
     $("addHero").textContent="＋ IMPORTAR JOGOS";$("addHero").onclick=()=>goPage("settings");
@@ -106,7 +108,7 @@
       const catalog=event.target.closest("[data-catalog]");
       if(catalog){storeFilter=catalog.dataset.catalog;goPage("store");return;}
       const platform=event.target.closest("[data-platform]");
-      if(platform){const p=platform.dataset.platform;if(p==="HTML")goPage("settings");else if(p==="PSP")goPage("psp");else goPage("sega");}
+      if(platform){const p=platform.dataset.platform;if(p==="HTML")goPage("emu-html");else if(p==="PSP")goPage("emu-psp");else if(p==="PS1")goPage("emu-ps1");else goPage("emu-mega-drive");}
     });
     refresh();
     const gamesNode=$("games");if(gamesNode)new MutationObserver(refresh).observe(gamesNode,{childList:true,subtree:true});
