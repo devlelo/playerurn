@@ -93,7 +93,7 @@
     hero.insertAdjacentElement("afterend",host);
     const kicker=hero.querySelector(".kicker"),heading=hero.querySelector("h1"),copy=hero.querySelector(".hero-copy>p");
     if(kicker)kicker.textContent="PLAYERUN · PSP / SEGA / BROWSER";
-    if(heading)heading.innerHTML="Três mundos.<br>Um só Playerun.";
+    if(heading)heading.innerHTML="Quatro sistemas.<br>Um só Playerun.";
     if(copy)copy.textContent="A tua biblioteca online e local, com páginas próprias para PSP, PlayStation, Sega e jogos HTML5. Cada sistema reconhece a sua pasta e abre os jogos dentro do Playerun.";
     $("browse")?.replaceWith(Object.assign(document.createElement("button"),{id:"browse",className:"primary",textContent:"EXPLORAR JOGOS →"}));
     $("browse").onclick=()=>goPage("store");
