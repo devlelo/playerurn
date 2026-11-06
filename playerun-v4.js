@@ -35,7 +35,7 @@
     .pu-secondary{background:#141b27;color:#f4f6fa;border:1px solid var(--pu-line);border-radius:4px;min-height:48px;padding:0 20px;font-weight:800}
     .stats{display:none!important}
     #consolas{display:none!important}
-    @media(max-width:700px){.hero{min-height:390px;margin-top:10px}.hero-copy{padding:24px 19px}.hero h1{font-size:62px}.pu-platforms{gap:7px;margin:20px 0 28px}.pu-platform{padding:12px;min-height:120px}.pu-platform strong{font-size:20px}.pu-platform span{font-size:9px}.pu-track{grid-auto-columns:142px;gap:9px}.pu-rail-head h2{font-size:25px}.topright .roundbtn{display:none}}
+    @media(max-width:700px){.hero{min-height:390px;margin-top:10px}.hero-copy{padding:24px 19px}.hero h1{font-size:62px}.pu-platforms{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:20px 0 28px}.pu-platform{padding:12px;min-height:120px}.pu-platform strong{font-size:20px}.pu-platform span{font-size:9px}.pu-track{grid-auto-columns:142px;gap:9px}.pu-rail-head h2{font-size:25px}.topright .roundbtn{display:none}}
   `;
   document.head.append(css);
   const local = () => { try { return Array.isArray(imported) ? imported : []; } catch { return []; } };
