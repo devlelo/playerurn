@@ -57,6 +57,15 @@
     const content=items.length?items.map(card).join(""):'<div class="stream-empty">Ainda não tens jogos desta plataforma.<br>Importa os teus ficheiros para criar a tua coleção.</div>';
     return '<section class="stream-row"><div class="stream-head"><div><h2>'+title+'</h2><p>'+subtitle+'</p></div></div><div class="stream-track" id="'+id+'">'+content+'</div></section>';
   }
+  function catalogRow(id,title,subtitle,platforms){
+    let catalog=[];try{catalog=Array.isArray(STORE)?STORE.filter(g=>platforms.includes(String(g.platform||""))):[]}catch{}
+    const content=catalog.length?catalog.slice(0,14).map(g=>{
+      const image=g.cover?'<img loading="lazy" src="'+esc(g.cover)+'" alt="">':"";
+      const label=g.mode==="download"?"CATÁLOGO · DESCARREGÁVEL":g.mode==="html"?"HTML5 · CATÁLOGO":"FICHA DO JOGO";
+      return '<article class="stream-card" data-catalog-platform="'+esc(g.platform)+'"><div class="stream-cover">'+image+'<strong>'+esc(g.title)+'</strong></div><div class="stream-meta">'+label+'</div></article>';
+    }).join(""):'<div class="stream-empty">Estamos a preparar esta coleção.</div>';
+    return '<section class="stream-row"><div class="stream-head"><div><h2>'+title+'</h2><p>'+subtitle+'</p></div></div><div class="stream-track" id="'+id+'">'+content+'</div></section>';
+  }
   function render(){
     const hero=$("inicio");
     if(!hero||$("playerunV4Home"))return;
@@ -74,6 +83,9 @@
       row("v4-psp","PSP EM DESTAQUE","A tua coleção portátil",psp)+
       row("v4-sega","SEGA EM DESTAQUE","Mega Drive e clássicos Sega",sega)+
       row("v4-html","JOGOS DE NAVEGADOR","Abre e joga sem instalar emulador",html)+
+      catalogRow("v4-psp-discover","DESCOBRIR PSP","Homebrew, demos e jogos independentes",["PSP"])+
+      catalogRow("v4-sega-discover","DESCOBRIR SEGA","Mega Drive e clássicos da Sega",["Mega Drive","MASTER SYSTEM"])+
+      catalogRow("v4-browser-discover","JOGOS PARA O BROWSER","Experiências HTML5 e jogos independentes",["HTML","PC / Browser","PC"])+
       '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:25px 0 38px"><button class="stream-cta" id="v4-my-games">VER OS MEUS JOGOS</button><button class="secondary" id="v4-explore">EXPLORAR CATÁLOGO</button></div>';
     hero.insertAdjacentElement("afterend",host);
     $("v4-my-games").onclick=()=>{const target=$("biblioteca");if(target)target.scrollIntoView({behavior:"smooth"});};
@@ -84,6 +96,8 @@
         if(platformKey(game)==="HTML"){if(typeof launch==="function")launch(game);}
         else showEngineNotice(platformKey(game));
       }
+      const catalog=event.target.closest("[data-catalog-platform]");
+      if(catalog){if(typeof goPage==="function"){if(typeof storeFilter!=="undefined")storeFilter=catalog.dataset.catalogPlatform;goPage("store");if(typeof renderStore==="function")renderStore();}}
       const system=event.target.closest("[data-focus]");
       if(system){const key=system.dataset.focus;if(key==="HTML")$("pickRoms")?.click();else showEngineNotice(key);}
     });
