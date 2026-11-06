@@ -187,37 +187,42 @@ async function launchHtmlGame(game){
   const frame=document.createElement("iframe");frame.title=game.title;frame.setAttribute("sandbox","allow-scripts allow-pointer-lock");frame.setAttribute("referrerpolicy","no-referrer");frame.style.cssText="width:100%;height:100%;min-height:420px;border:0;background:#080b10";$("stage").append(frame);frame.srcdoc=html;
  }catch(error){$("stage").textContent="Não foi possível abrir este jogo HTML: "+error.message;console.error(error)}
 }
-function launch(game){
+async function launch(game){
  currentGame=game;
  if(game.platform==="PSP"&&window.PlayerunEngines){window.PlayerunEngines.open(game,"psp");return}
- if(["Mega Drive","MASTER SYSTEM","Game Gear","SG-1000"].includes(game.platform)&&window.PlayerunEngines){window.PlayerunEngines.open(game,"sega");return}
- if(game.platform==="HTML"||game.mode==="html"||/\.html?$/i.test(game.file?.name||game.url||"")){launchHtmlGame(game);return}
+ if(game.platform==="HTML"||game.mode==="html"||/\\.html?$/i.test(game.file?.name||game.url||"")){launchHtmlGame(game);return}
  stopEmulator();currentGame=game;
  if(currentRomUrl&&currentRomUrl.startsWith("blob:"))URL.revokeObjectURL(currentRomUrl);
  currentRomUrl=null;
  $("playingTitle").textContent=game.title;$("asideTitle").textContent=game.title;
  $("asideDesc").textContent=game.description||("A executar "+game.platform+" no emulador integrado.");
  const core=game.core||coreFor(game.platform);
- $("playerNotice").textContent=game.platform==="PSP"&&(!window.crossOriginIsolated||!window.SharedArrayBuffer)?"PSP precisa de SharedArrayBuffer e isolamento de origem cruzada. Verifica o navegador e os cabeçalhos do site.":(game.license?"Licença do jogo: "+game.license:"ROM local. Confirma que tens direito de utilização.");
+ $("playerNotice").textContent=game.license?"Licença do jogo: "+game.license:"ROM local. Confirma que tens direito de utilização.";
  $("stage").innerHTML='<div id="game" tabindex="0" style="width:100%;height:100%;min-height:420px;background:#000;outline:none"></div>';
  $("player").classList.add("open");$("player").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
  try{
   if(game.file)currentRomUrl=URL.createObjectURL(game.file);
-  else if(game.rom){const frameError="Este título ainda não foi descarregado para a biblioteca.";throw new Error(frameError)}
-  else throw new Error("Ficheiro do jogo não encontrado.");
-  // Executa EmulatorJS diretamente na página principal, sem iframe: teclado e gamepad chegam ao emulador.
+  else if(game.rom){
+   $("playerNotice").textContent="A carregar o ficheiro do jogo…";
+   const response=await fetch(game.rom,{mode:"cors"});
+   if(!response.ok)throw new Error("Não foi possível obter a ROM (HTTP "+response.status+").");
+   const romBlob=await response.blob();
+   if(!romBlob.size)throw new Error("O ficheiro do jogo está vazio.");
+   currentRomUrl=URL.createObjectURL(romBlob);
+  }else throw new Error("Ficheiro do jogo não encontrado.");
+  // EmulatorJS é o motor partilhado por PSX e SEGA; o core é escolhido pela consola.
   window.EJS_player="#game";window.EJS_gameUrl=currentRomUrl;window.EJS_biosUrl=biosUrl||"";
   window.EJS_core=core;window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";
   window.EJS_gameName=game.title;window.EJS_language="pt-BR";window.EJS_startOnLoaded=true;
   window.EJS_color="#d5ff45";window.EJS_threads=core==="psp";window.EJS_gameID=Math.abs(Array.from(String(game.id||game.title)).reduce((n,c)=>(n*31+c.charCodeAt(0))|0,7))||1;window.EJS_netplay=false;
   const schemes=["nes","gb","gba","snes","n64","nds","segaMD","segaCD","sega32x","segaMS","segaGG","segaSaturn","arcade","mame"];if(schemes.includes(core))window.EJS_controlScheme=core;else delete window.EJS_controlScheme;
-  // Deixa o EmulatorJS aplicar o esquema nativo do core; "default" não é um esquema válido.
   const oldLoader=document.getElementById("playerun-emulator-loader");if(oldLoader)oldLoader.remove();const loader=document.createElement("script");loader.id="playerun-emulator-loader";loader.src="https://cdn.emulatorjs.org/stable/data/loader.js";
   loader.onerror=()=>{$("playerNotice").textContent="Não foi possível carregar o motor EmulatorJS. Verifica a ligação à internet."};
   document.body.append(loader);
+  $("playerNotice").textContent=game.license?"Licença do jogo: "+game.license:"A jogar dentro do Playerun.";
   $("controlNote").textContent="Teclado: setas + Z/X/A/S, Enter e Shift. Comando USB/Bluetooth: liga antes de iniciar o jogo e clica na área do emulador. No telemóvel, ativa os controlos táteis do EmulatorJS.";
  }catch(err){
-  $("stage").innerHTML='<div style="max-width:480px;padding:28px;text-align:center;color:#e8ebf2"><div style="font-size:34px">⚠</div><h2 style="font-family:Barlow Condensed;font-size:28px">Jogo ainda não está na biblioteca</h2><p style="color:#aeb8c8;font-size:12px">'+escapeHtml(err.message)+'</p><p style="color:#aeb8c8;font-size:12px">Descarrega o ficheiro pelo catálogo e importa-o. Depois será aberto dentro do Playerun.</p></div>';
+  $("stage").innerHTML='<div style="max-width:480px;padding:28px;text-align:center;color:#e8ebf2"><div style="font-size:34px">⚠</div><h2 style="font-family:Barlow Condensed;font-size:28px">Não foi possível abrir o jogo</h2><p style="color:#aeb8c8;font-size:12px">'+escapeHtml(err.message)+'</p><p style="color:#aeb8c8;font-size:12px">Confirma o ficheiro ou a ligação de origem e tenta novamente.</p></div>';
   console.warn(err);
  }
 }
