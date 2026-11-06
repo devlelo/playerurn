@@ -1,5 +1,5 @@
 /* Playerun offline-first service worker — same-origin emulator runtime cache */
-const VERSION = "playerun-shell-v9";
+const VERSION = "playerun-shell-v10";
 const CORE = [
   "./",
   "./index.html",
