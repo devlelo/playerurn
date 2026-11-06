@@ -1,25 +1,36 @@
 {
-  "version": 1,
-  "focus": ["PSP", "SEGA", "HTML"],
-  "engines": {
+  "version": 2,
+  "platforms": {
     "PSP": {
-      "name": "PPSSPP WebAssembly",
+      "engine": "PPSSPP WebAssembly",
       "project": "https://github.com/root-hunter/ppsspp-web",
-      "runtime": "independent-wasm",
-      "status": "integration-required",
-      "reason": "The upstream project requires its PPSSPP-WASM submodule and a built release bundle. The Playerun repository does not yet contain those generated runtime assets."
+      "license": "GPL-2.0-or-later",
+      "integration": "same-origin-reverse-proxy",
+      "route": "/engines/psp/",
+      "gameFileInput": "#libraryImportFile",
+      "offline": "runtime-assets-cached-after-first-online-load",
+      "status": "wired"
     },
     "SEGA": {
-      "name": "JGenesis WebAssembly",
-      "project": "https://github.com/jsgroth/jgenesis",
-      "runtime": "independent-wasm",
-      "status": "integration-required",
-      "reason": "The upstream project has a dedicated web frontend and WASM build, but its compiled web distribution must be built and vendored before it can run offline inside Playerun."
+      "engine": "Sandopolis",
+      "project": "https://github.com/pixel-clover/sandopolis",
+      "license": "MIT",
+      "integration": "same-origin-reverse-proxy",
+      "route": "/engines/sega/",
+      "gameFileInput": "#rom-input",
+      "offline": "runtime-assets-cached-after-first-online-load",
+      "status": "wired-with-alpha-compatibility-warning"
     },
     "HTML": {
-      "name": "Playerun HTML5 Sandbox",
-      "runtime": "native-sandboxed-iframe",
-      "status": "available"
+      "engine": "Playerun HTML5 Sandbox",
+      "runtime": "sandboxed-iframe-srcdoc",
+      "status": "local"
     }
-  }
+  },
+  "notes": [
+    "PSP and Sega run with different emulator projects; they do not share EmulatorJS.",
+    "The browser displays the emulator under the Playerun origin using Vercel rewrites.",
+    "The first engine load requires internet; same-origin runtime files can then be cached by the Playerun service worker.",
+    "Game ROMs and BIOS files are not included."
+  ]
 }
