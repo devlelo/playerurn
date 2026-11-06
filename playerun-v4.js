@@ -42,7 +42,7 @@
   const kind = game => {
     const p=String(game.platform||"").toLowerCase();
     if(p==="psp")return "PSP";
-    if(p.includes("mega")||p.includes("sega")||p==="master system"||p==="sms")return "SEGA";
+    if(p.includes("mega")||p.includes("sega")||p==="master system"||p==="sms"||p==="game gear"||p==="sg-1000")return "SEGA";
     if(p==="html"||game.mode==="html"||/\.html?$/i.test(game.file?.name||game.url||""))return "HTML";
     return "";
   };
@@ -65,7 +65,7 @@
     const host=$("playerunHome");if(!host)return;
     const games=local(),psp=games.filter(g=>kind(g)==="PSP"),sega=games.filter(g=>kind(g)==="SEGA"),html=games.filter(g=>kind(g)==="HTML");
     for(const [id,list] of [["pu-psp",psp],["pu-sega",sega],["pu-html",html]]){const node=$(id);if(node)node.innerHTML=list.length?list.map(gameCard).join(""):'<div class="pu-empty">Ainda não há jogos nesta coleção.</div>';}
-    const cats=[["pu-discover-psp",["PSP"]],["pu-discover-sega",["Mega Drive","MASTER SYSTEM"]],["pu-discover-html",["HTML","PC / Browser","PC"]]];
+    const cats=[["pu-discover-psp",["PSP"]],["pu-discover-sega",["Mega Drive","MASTER SYSTEM","Game Gear","SG-1000"]],["pu-discover-html",["HTML","PC / Browser","PC"]]];
     for(const [id,platforms] of cats){const node=$(id);if(node){let list=[];try{list=STORE.filter(g=>platforms.includes(String(g.platform||""))&&(g.mode==="download"||g.mode==="html"||g.mode==="info"))}catch{}node.innerHTML=list.length?list.slice(0,12).map(catalogCard).join(""):'<div class="pu-empty">A coleção será apresentada aqui.</div>';}}
   }
   function render(){
