@@ -1,11 +1,11 @@
 /* Playerun PWA service worker — resilient offline shell */
-const VERSION = "playerun-shell-v6";
+const VERSION = "playerun-shell-v7";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icon.svg",
-  "./playrun-enhancements.js",
+  "./playrun-enhancements.js",\n  "./playerun-v4.js",\n  "./emulators/engines.json",
   "./covers/battle-4tris.svg",
   "./catalog/games.json",
   "./games-html/pong.html",
