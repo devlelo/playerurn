@@ -12,7 +12,7 @@
     .hero-copy>p{max-width:560px;line-height:1.65}
     .hero-actions button{border-radius:4px;min-height:48px;padding:0 22px}
     .pu-home{padding:12px 0 46px}
-    .pu-platforms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:26px 0 36px}
+    .pu-platforms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:26px 0 36px}
     .pu-platform{min-height:132px;padding:18px;text-align:left;background:linear-gradient(145deg,#151d2a,#0c111a);border:1px solid var(--pu-line);border-radius:6px;color:#f7f8fb;cursor:pointer}
     .pu-platform:hover{border-color:#d8ff4f88;transform:translateY(-2px)}
     .pu-platform small{display:block;color:var(--pu-lime);font-size:9px;font-weight:900;letter-spacing:.2em}
@@ -64,8 +64,8 @@
   }
   function refresh(){
     const host=$("playerunHome");if(!host)return;
-    const games=local(),psp=games.filter(g=>kind(g)==="PSP"),sega=games.filter(g=>kind(g)==="SEGA"),html=games.filter(g=>kind(g)==="HTML");
-    for(const [id,list] of [["pu-psp",psp],["pu-sega",sega],["pu-html",html]]){const node=$(id);if(node)node.innerHTML=list.length?list.map(gameCard).join(""):'<div class="pu-empty">Ainda não há jogos nesta coleção.</div>';}
+    const games=local(),psp=games.filter(g=>kind(g)==="PSP"),ps1=games.filter(g=>kind(g)==="PS1"),sega=games.filter(g=>kind(g)==="SEGA"),html=games.filter(g=>kind(g)==="HTML");
+    for(const [id,list] of [["pu-psp",psp],["pu-ps1",ps1],["pu-sega",sega],["pu-html",html]]){const node=$(id);if(node)node.innerHTML=list.length?list.map(gameCard).join(""):'<div class="pu-empty">Ainda não há jogos nesta coleção.</div>';}
     const cats=[["pu-discover-psp",["PSP"]],["pu-discover-sega",["Mega Drive","MASTER SYSTEM","Game Gear","SG-1000"]],["pu-discover-html",["HTML","PC / Browser","PC"]]];
     for(const [id,platforms] of cats){const node=$(id);if(node){let list=[];try{list=STORE.filter(g=>platforms.includes(String(g.platform||""))&&(g.mode==="download"||g.mode==="html"||g.mode==="info"))}catch{}node.innerHTML=list.length?list.slice(0,12).map(catalogCard).join(""):'<div class="pu-empty">A coleção será apresentada aqui.</div>';}}
   }
