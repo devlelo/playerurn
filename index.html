@@ -280,15 +280,19 @@ function cardMarkup(g){
 }
 function renderGrid(id,list){const el=$(id);if(!el)return;el.innerHTML=list.map(cardMarkup).join("");}
 function safeRomExtension(game){
- const raw=String(game.ext||"").toLowerCase().replace(/^\\./,"");
+ let raw=String(game.ext||"").toLowerCase();
+ if(raw.startsWith("."))raw=raw.slice(1);
  if(/^[a-z0-9]{1,8}$/.test(raw))return raw;
- try{const path=new URL(game.url).pathname;const match=path.match(/\\.([a-z0-9]{1,8})$/i);if(match)return match[1].toLowerCase()}catch(e){}
+ try{const path=new URL(game.url).pathname.split("/").pop()||"";const parts=path.split(".");const ext=parts.length>1?parts.pop().toLowerCase():"";if(/^[a-z0-9]{1,8}$/.test(ext))return ext}catch(e){}
  return "bin";
 }
 async function uniqueRomHandle(dir,baseName){
+ const dot=baseName.lastIndexOf(".");
+ const stem=dot>0?baseName.slice(0,dot):baseName;
+ const ext=dot>0?baseName.slice(dot+1):"bin";
  let name=baseName,number=2;
  while(true){
-  try{await dir.getFileHandle(name);name=baseName.replace(/\\.([^.]+)$/," ("+number+").$1");number++}
+  try{await dir.getFileHandle(name);name=stem+" ("+number+")."+ext;number++}
   catch(error){if(error.name==="NotFoundError")return dir.getFileHandle(name,{create:true});throw error}
  }
 }
@@ -296,27 +300,27 @@ async function downloadStoreGame(id,button){
  const game=STORE.find(item=>item.id===id);
  if(!game||game.mode!=="download"||!game.url)return;
  const status=$("store-status-"+id);
- const setStatus=message=>{if(status)status.textContent=message};
  const original=button.textContent;
  button.disabled=true;button.textContent="A PREPARAR…";
  try{
-  if(!gameDir){setStatus("Escolhe a pasta principal para organizar os jogos.");await chooseFolder();if(!gameDir)throw new Error("Pasta não selecionada.")}
+  if(!gameDir){if(status)status.textContent="Escolhe a pasta principal para organizar os jogos.";await chooseFolder();if(!gameDir)throw new Error("Pasta não selecionada.")}
   if(!await folderPermission(true))throw new Error("Permissão de escrita não concedida.");
   const platform=canonicalPlatform(game.platform);
   const folder=folderForPlatform(platform);
-  setStatus("A transferir "+game.title+"…");button.textContent="A TRANSFERIR…";
+  if(status)status.textContent="A transferir "+game.title+"…";
+  button.textContent="A TRANSFERIR…";
   const response=await fetch(game.url,{method:"GET",mode:"cors"});
   if(!response.ok)throw new Error("O servidor respondeu HTTP "+response.status+".");
   const blob=await response.blob();
   if(!blob.size)throw new Error("O servidor devolveu um ficheiro vazio.");
   const dir=await systemFolder(platform,true);
   const ext=safeRomExtension(game);
-  const baseName=String(game.title||game.id).replace(/[\\/:*?"<>|\\x00-\\x1F]/g,"").trim().slice(0,100)||game.id;
-  const handle=await uniqueRomHandle(dir,baseName+"."+ext);
+  const cleanTitle=String(game.title||game.id).replace(/[/:*?"<>|]/g,"").split("\\").join("").trim().slice(0,100);
+  const handle=await uniqueRomHandle(dir,(cleanTitle||game.id)+"."+ext);
   const writable=await handle.createWritable();
   try{await writable.write(blob);await writable.close()}catch(error){try{await writable.abort()}catch(_){}throw error}
   await scanFolder(platform);
-  setStatus("Guardado em "+folder+"/"+handle.name+" · "+(blob.size/1048576).toFixed(1)+" MB");
+  if(status)status.textContent="Guardado em "+folder+"/"+handle.name+" · "+(blob.size/1048576).toFixed(1)+" MB";
   button.textContent="GUARDADO";
  }catch(error){
   const message=error?.message||"Erro desconhecido.";
