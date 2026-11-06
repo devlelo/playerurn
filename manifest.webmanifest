@@ -1,7 +1,7 @@
 {
-  "name": "Playerun — PSP, Sega e Browser",
+  "name": "Playerun — PSP, PlayStation, Sega e HTML5",
   "short_name": "Playerun",
-  "description": "Playerun: a tua biblioteca de PSP, Sega e jogos HTML5. Emuladores dedicados e experiência offline-first.",
+  "description": "Playerun: biblioteca online e local de jogos PSP, PlayStation, Sega e HTML5. Emuladores em páginas próprias.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
