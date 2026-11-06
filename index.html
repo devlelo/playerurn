@@ -128,7 +128,7 @@ async function launchHtmlGame(game){
 }
 function launch(game){
  if(game.platform==="PSP"&&window.PlayerunEngines){window.PlayerunEngines.open(game,"psp");return}
- if(["Mega Drive","MASTER SYSTEM"].includes(game.platform)&&window.PlayerunEngines){window.PlayerunEngines.open(game,"sega");return}
+ if(["Mega Drive","MASTER SYSTEM","Game Gear","SG-1000"].includes(game.platform)&&window.PlayerunEngines){window.PlayerunEngines.open(game,"sega");return}
  if(game.platform==="HTML"||game.mode==="html"||/\.html?$/i.test(game.file?.name||game.url||"")){launchHtmlGame(game);return}
  stopEmulator();currentGame=game;
  if(currentRomUrl&&currentRomUrl.startsWith("blob:"))URL.revokeObjectURL(currentRomUrl);
