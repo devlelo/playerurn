@@ -256,6 +256,8 @@ function renderEmulatorPage(label){
 }
 sys.addEventListener("click",e=>{const b=e.target.closest("[data-system]");if(!b)return;const label=b.dataset.system;const target=emulatorViews[label]||emulatorViews[label.toUpperCase()];if(target)goPage(target);});
 shell.addEventListener("click",e=>{
+ const downloadBtn=e.target.closest("[data-store-download]");
+ if(downloadBtn){e.preventDefault();downloadStoreGame(downloadBtn.dataset.storeDownload,downloadBtn);return;}
  const libraryOpen=e.target.closest("[data-library-open]");if(libraryOpen){goPage(libraryOpen.dataset.libraryOpen);return;}
  const explore=e.target.closest("[data-explore-system]");
  if(explore){storeFilter=explore.dataset.exploreSystem;goPage("store");return;}
@@ -272,11 +274,61 @@ nav.addEventListener("click",e=>{const a=e.target.closest("[data-page]");if(a){e
 $("browse").onclick=()=>goPage("store");$("addHero").onclick=()=>goPage("settings");
 function cardMarkup(g){
  const cover=g.cover?'<img loading="lazy" src="'+escapeHtml(g.cover)+'" alt="" onerror="this.remove()">':'<div class="cover-missing"><strong>'+escapeHtml(g.title)+'</strong><span>'+escapeHtml(g.platform)+'</span></div>';
- const action=g.mode==="local"?'<button class="primary" data-play-local="'+escapeHtml(g.id)+'">▶ JOGAR</button>':g.mode==="html"?'<button class="primary" data-play-html="'+escapeHtml(g.id)+'">▶ JOGAR NO PLAYERUN</button>':g.mode==="download"&&g.url?'<a class="primary" href="'+escapeHtml(g.url)+'" download target="_blank" rel="noopener">⬇ DESCARREGAR</a>':g.mode==="download"?'<button class="secondary" disabled>DOWNLOAD INDISPONÍVEL</button>':g.mode==="play"?'<button class="secondary" disabled title="Este jogo requer integração própria para execução interna">INDISPONÍVEL NO LEITOR</button>':'<button class="secondary" disabled title="Este item é uma fonte informativa, não um jogo executável">APENAS INFORMAÇÃO</button>';
+ const action=g.mode==="local"?'<button class="primary" data-play-local="'+escapeHtml(g.id)+'">▶ JOGAR</button>':g.mode==="html"?'<button class="primary" data-play-html="'+escapeHtml(g.id)+'">▶ JOGAR NO PLAYERUN</button>':g.mode==="download"&&g.url?'<button class="primary" type="button" data-store-download="'+escapeHtml(g.id)+'">⬇ DESCARREGAR</button>':g.mode==="download"?'<button class="secondary" disabled>DOWNLOAD INDISPONÍVEL</button>':g.mode==="play"?'<button class="secondary" disabled title="Este jogo requer integração própria para execução interna">INDISPONÍVEL NO LEITOR</button>':'<button class="secondary" disabled title="Este item é uma fonte informativa, não um jogo executável">APENAS INFORMAÇÃO</button>';
  const details=[g.type,g.genre,g.version,g.sizeLabel,g.license].filter(Boolean).join(" · ");
  return '<article class="store-card"><div class="cover">'+cover+'<span class="cover-label">'+escapeHtml(g.platform)+'</span><span class="cover-title">'+escapeHtml(g.title)+'</span></div><div class="gameinfo"><h3>'+escapeHtml(g.title)+'</h3><p>'+escapeHtml(g.desc||"Jogo independente.")+'</p><div class="store-meta">'+escapeHtml(details)+'</div><div class="store-actions">'+action+'</div><div class="store-status" id="store-status-'+escapeHtml(g.id)+'"></div></div></article>';
 }
 function renderGrid(id,list){const el=$(id);if(!el)return;el.innerHTML=list.map(cardMarkup).join("");}
+function safeRomExtension(game){
+ const raw=String(game.ext||"").toLowerCase().replace(/^\\./,"");
+ if(/^[a-z0-9]{1,8}$/.test(raw))return raw;
+ try{const path=new URL(game.url).pathname;const match=path.match(/\\.([a-z0-9]{1,8})$/i);if(match)return match[1].toLowerCase()}catch(e){}
+ return "bin";
+}
+async function uniqueRomHandle(dir,baseName){
+ let name=baseName,number=2;
+ while(true){
+  try{await dir.getFileHandle(name);name=baseName.replace(/\\.([^.]+)$/," ("+number+").$1");number++}
+  catch(error){if(error.name==="NotFoundError")return dir.getFileHandle(name,{create:true});throw error}
+ }
+}
+async function downloadStoreGame(id,button){
+ const game=STORE.find(item=>item.id===id);
+ if(!game||game.mode!=="download"||!game.url)return;
+ const status=$("store-status-"+id);
+ const setStatus=message=>{if(status)status.textContent=message};
+ const original=button.textContent;
+ button.disabled=true;button.textContent="A PREPARAR…";
+ try{
+  if(!gameDir){setStatus("Escolhe a pasta principal para organizar os jogos.");await chooseFolder();if(!gameDir)throw new Error("Pasta não selecionada.")}
+  if(!await folderPermission(true))throw new Error("Permissão de escrita não concedida.");
+  const platform=canonicalPlatform(game.platform);
+  const folder=folderForPlatform(platform);
+  setStatus("A transferir "+game.title+"…");button.textContent="A TRANSFERIR…";
+  const response=await fetch(game.url,{method:"GET",mode:"cors"});
+  if(!response.ok)throw new Error("O servidor respondeu HTTP "+response.status+".");
+  const blob=await response.blob();
+  if(!blob.size)throw new Error("O servidor devolveu um ficheiro vazio.");
+  const dir=await systemFolder(platform,true);
+  const ext=safeRomExtension(game);
+  const baseName=String(game.title||game.id).replace(/[\\/:*?"<>|\\x00-\\x1F]/g,"").trim().slice(0,100)||game.id;
+  const handle=await uniqueRomHandle(dir,baseName+"."+ext);
+  const writable=await handle.createWritable();
+  try{await writable.write(blob);await writable.close()}catch(error){try{await writable.abort()}catch(_){}throw error}
+  await scanFolder(platform);
+  setStatus("Guardado em "+folder+"/"+handle.name+" · "+(blob.size/1048576).toFixed(1)+" MB");
+  button.textContent="GUARDADO";
+ }catch(error){
+  const message=error?.message||"Erro desconhecido.";
+  const likelyCors=error instanceof TypeError||/fetch|network|cors/i.test(message);
+  const fallback=likelyCors?'<br><a href="'+escapeHtml(game.url)+'" target="_blank" rel="noopener">ABRIR DOWNLOAD ORIGINAL</a> · este método não organiza automaticamente a pasta.':"";
+  if(status)status.innerHTML="Não foi possível guardar automaticamente: "+escapeHtml(message)+fallback;
+  button.textContent=original;
+ }finally{
+  button.disabled=false;
+  if(button.textContent==="A TRANSFERIR…"||button.textContent==="A PREPARAR…")button.textContent=original;
+ }
+}
 function renderStore(){const q=$("search").value.toLowerCase().trim();const allowed=SYSTEMS.map(system=>canonicalPlatform(system.label));const eligible=STORE.filter(g=>allowed.includes(g.platform)&&["download","html","play"].includes(g.mode));const platforms=SYSTEMS.map(system=>canonicalPlatform(system.label)).filter((p,i,a)=>a.indexOf(p)===i&&eligible.some(g=>g.platform===p));const labels={"PS1":"PlayStation","MASTER SYSTEM":"Master System","SATURN":"Saturn","GB":"Game Boy","NDS":"Nintendo DS","HTML":"HTML5","ARCADE":"Arcade"};$("storeFilters").innerHTML='<button class="filter" data-store-filter="Todos">Todos ('+eligible.length+')</button>'+platforms.map(p=>'<button class="filter" data-store-filter="'+escapeHtml(p)+'">'+escapeHtml(labels[p]||p)+' ('+eligible.filter(g=>g.platform===p).length+')</button>').join("");const list=STORE.filter(g=>["download","html","info","play"].includes(g.mode)&&allowed.includes(g.platform)&&(storeFilter==="Todos"||g.platform===storeFilter)&&(!q||(g.title+" "+g.platform+" "+g.desc+" "+(g.genre||"")).toLowerCase().includes(q)));renderGrid("storeGames",list);$("storeEmpty").hidden=!!list.length;document.querySelectorAll("[data-store-filter]").forEach(b=>b.classList.toggle("active",b.dataset.storeFilter===storeFilter));updateCatalogStatus();}
 function renderCategory(key){const q=$("search").value.toLowerCase().trim();const predicates={psp:g=>g.platform==="PSP",nintendo:g=>["GBA","NES","SNES","GB","NDS"].includes(g.platform),sega:g=>["Mega Drive","MASTER SYSTEM"].includes(g.platform),playstation:g=>g.platform==="PS1",pc:g=>["PC","PC / Browser","HTML"].includes(g.platform)};const list=STORE.filter(g=>(g.mode==="download"||g.mode==="html"||g.mode==="info")&&predicates[key](g)).filter(g=>!q||(g.title+" "+g.platform+" "+g.desc+" "+(g.genre||"")).toLowerCase().includes(q));renderGrid("grid-"+key,list);$("empty-"+key).hidden=!!list.length;const status=$("status-"+key);if(status)status.textContent=list.length+" títulos nesta secção. Os catálogos externos são atualizados a partir das fontes dos autores.";}
 function updateCatalogStatus(){const allowed=SYSTEMS.map(system=>canonicalPlatform(system.label));const visible=STORE.filter(g=>allowed.includes(g.platform)&&["download","html","play"].includes(g.mode));const info=STORE.filter(g=>allowed.includes(g.platform)&&g.mode==="info").length;const counts=SYSTEMS.map(system=>canonicalPlatform(system.label)).filter((p,i,a)=>a.indexOf(p)===i).map(p=>({p,n:visible.filter(g=>g.platform===p).length})).filter(x=>x.n);const labels={"PS1":"PlayStation","MASTER SYSTEM":"Master System","SATURN":"Saturn","GB":"Game Boy","NDS":"Nintendo DS","HTML":"HTML5","ARCADE":"Arcade"};const summary=counts.map(x=>x.n+" "+(labels[x.p]||x.p)).join(" · ");$("catalogStatus").textContent=visible.length+" jogos disponíveis"+(summary?" · "+summary:"")+(info?" · "+info+" itens informativos":"")+". As categorias sem jogos disponíveis ficam ocultas.";}
