@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "focus": ["PSP", "SEGA", "HTML"],
+  "engines": {
+    "PSP": {
+      "name": "PPSSPP WebAssembly",
+      "project": "https://github.com/root-hunter/ppsspp-web",
+      "runtime": "independent-wasm",
+      "status": "integration-required",
+      "reason": "The upstream project requires its PPSSPP-WASM submodule and a built release bundle. The Playerun repository does not yet contain those generated runtime assets."
+    },
+    "SEGA": {
+      "name": "JGenesis WebAssembly",
+      "project": "https://github.com/jsgroth/jgenesis",
+      "runtime": "independent-wasm",
+      "status": "integration-required",
+      "reason": "The upstream project has a dedicated web frontend and WASM build, but its compiled web distribution must be built and vendored before it can run offline inside Playerun."
+    },
+    "HTML": {
+      "name": "Playerun HTML5 Sandbox",
+      "runtime": "native-sandboxed-iframe",
+      "status": "available"
+    }
+  }
+}
