@@ -1,4 +1,22 @@
 {
+  "rewrites": [
+    {
+      "source": "/engines/psp",
+      "destination": "https://root-hunter.github.io/ppsspp-web/"
+    },
+    {
+      "source": "/engines/psp/:path*",
+      "destination": "https://root-hunter.github.io/ppsspp-web/:path*"
+    },
+    {
+      "source": "/engines/sega",
+      "destination": "https://pixel-clover.github.io/sandopolis/"
+    },
+    {
+      "source": "/engines/sega/:path*",
+      "destination": "https://pixel-clover.github.io/sandopolis/:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
